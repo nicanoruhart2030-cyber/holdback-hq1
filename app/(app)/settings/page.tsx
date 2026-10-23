@@ -40,7 +40,7 @@ export default function SettingsPage() {
             <tbody>
               {RULES.map((r) => (
                 <tr key={r.id}>
-                  <td className="max-w-sm"><div className="num text-xs text-mint">{r.id}</div><div className="mt-1 text-sm">{r.description}</div></td>
+                  <td className="max-w-sm"><div className="text-sm font-medium">{r.label}</div><div className="mt-0.5 text-sm text-muted">{r.description}</div><div className="num mt-1 text-2xs text-faint">{r.id}</div></td>
                   <td><span className="num text-xs text-muted">{r.trigger}</span></td>
                   <td className="text-right"><Num>{r.offsetDays > 0 ? `+${r.offsetDays}` : r.offsetDays}d</Num></td>
                   <td className="text-xs text-muted">{r.dayType}{r.rollForward ? ", rolls to business day" : ""}</td>

@@ -33,7 +33,7 @@ export function PageHeader({
     <header className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
       <div className="min-w-0">
         {eyebrow ? <div className="label mb-2">{eyebrow}</div> : null}
-        <h1 className="h-display text-[34px] text-fg">{title}</h1>
+        <h1 className="h-display text-display text-fg">{title}</h1>
         {description ? <p className="mt-2 max-w-2xl text-sm text-muted">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -72,7 +72,7 @@ export function Stat({ label, value, hint, tone = "default", href }: {
   const body = (
     <div className="card h-full p-5 transition-colors hover:border-line-strong">
       <div className="label">{label}</div>
-      <div className={`num mt-3 text-[28px] font-medium leading-none ${color}`}>{value}</div>
+      <div className={`num mt-3 text-stat font-medium ${color}`}>{value}</div>
       {hint ? <div className="mt-3 text-xs text-muted">{hint}</div> : null}
     </div>
   );

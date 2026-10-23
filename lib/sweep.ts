@@ -111,8 +111,16 @@ export async function runDailySweep(db: AdminClient, today: string, actorId: str
     eWsib.push({ id: w.id, client_id: w.client_id, gc_name: w.gc_name, certificate_number: w.certificate_number, expiry_date: w.expiry_date });
   }
 
-  // 4. Upsert deadlines; resolve the ones no longer produced.
-  const candidates = computeDeadlines({ today, projects: eProjects, invoices: eInvoices, holdbacks: eHoldbacks, wsib: eWsib });
+  // 4. Upsert deadlines; resolve the ones no longer produced. Dismissed keys stay dismissed.
+  const dismissed = new Set(
+    check<Array<{ dedupe_key: string }>>(
+      await db.from("deadlines").select("dedupe_key").eq("dismissed", true),
+      "dismissed deadlines",
+    ).map((r) => r.dedupe_key),
+  );
+  const candidates = computeDeadlines({ today, projects: eProjects, invoices: eInvoices, holdbacks: eHoldbacks, wsib: eWsib }).filter(
+    (c) => !dismissed.has(c.dedupe_key),
+  );
   const rows = candidates.map((c) => ({ ...c, resolved: false, resolved_at: null }));
   for (let i = 0; i < rows.length; i += 500) {
     check(

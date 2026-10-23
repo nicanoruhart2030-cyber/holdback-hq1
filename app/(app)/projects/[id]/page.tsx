@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { addHoldbackAction, releaseHoldbackAction, updateInvoiceStatusAction, updateProjectDatesAction } from "../../actions";
+import { Disclosure } from "@/components/disclosure";
 import { SubmitButton } from "@/components/submit-button";
 import { LOW_CONFIDENCE } from "@/lib/ai/confidence";
 import { Card, DateText, Empty, Field, Money, Num, PageHeader, Stat, StatusBadge } from "@/components/ui";
@@ -12,7 +13,12 @@ import { compareDates, diffDays } from "@/lib/rules/calendar";
 import { createClient } from "@/lib/supabase/server";
 import { num, type Client, type Holdback, type Invoice, type Project, type WsibClearance } from "@/lib/types";
 
-export default async function ProjectPage({ params }: { params: { id: string } }) {
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const { data } = await createClient().from("projects").select("name").eq("id", params.id).maybeSingle<{ name: string }>();
+  return { title: data?.name ?? "Not found" };
+}
+
+export default async function ProjectPage({ params, searchParams }: { params: { id: string }; searchParams: { edit?: string } }) {
   const supabase = createClient();
   const today = todayInToronto();
   const { profile } = await getProfile();
@@ -31,6 +37,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
   const pct = num(project.holdback_percent);
   const m = moneyMetrics(invs, [project], hbs, today);
   const cert = (wsib.data ?? [])[0];
+  const editing = isAdmin ? invs.find((i) => i.id === searchParams.edit) : undefined;
 
   const milestones: Array<{ date: string; label: string }> = [];
   if (project.contract_start_date) milestones.push({ date: project.contract_start_date, label: "Contract start" });
@@ -69,7 +76,9 @@ export default async function ProjectPage({ params }: { params: { id: string } }
         <Stat label="Holdback owed" value={<Money value={m.holdbackOwed} whole />} hint={<><Money value={m.holdbackDueSoon} whole /> due within 14 days</>} />
       </div>
 
+      <div id="invoices" />
       <Card title="Invoices" flush className="mt-6">
+        {editing ? <InvoiceEditor invoice={editing} projectId={project.id} today={today} /> : null}
         {invs.length === 0 ? (
           <Empty>No invoices. Upload them from the client page.</Empty>
         ) : (
@@ -78,7 +87,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
               <thead>
                 <tr>
                   <th>Invoice</th><th>Submitted</th><th>Due</th><th className="text-right">Total</th><th className="text-right">Paid</th>
-                  <th className="text-right">Payable now</th><th>Status</th>{isAdmin ? <th>Update</th> : null}
+                  <th className="text-right">Payable now</th><th>Status</th>{isAdmin ? <th className="w-24" /> : null}
                 </tr>
               </thead>
               <tbody>
@@ -87,7 +96,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                   const balance = invoiceBalance({ amount: num(inv.amount), tax: num(inv.tax), amount_paid: num(inv.amount_paid), status: inv.status }, pct);
                   const lapsed = inv.submitted_date && !inv.disputed_date && compareDates(disputeWindowCloses(inv.submitted_date, project.payer_type), today) < 0;
                   return (
-                    <tr key={inv.id}>
+                    <tr key={inv.id} id={`invoice-${inv.id}`} className={editing?.id === inv.id ? "bg-raised" : undefined}>
                       <td>
                         <span className="num">{inv.number}</span>
                         {inv.source_file_path ? (
@@ -108,16 +117,12 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                       </td>
                       <td><StatusBadge status={inv.status} /></td>
                       {isAdmin ? (
-                        <td>
-                          <form action={updateInvoiceStatusAction} className="flex items-center gap-1.5">
-                            <input type="hidden" name="id" value={inv.id} />
-                            <select name="status" defaultValue={inv.status === "draft" ? "submitted" : inv.status} className="input w-28 py-1 text-xs">
-                              <option value="submitted">Submitted</option><option value="partial">Partial</option><option value="paid">Paid</option>
-                              <option value="disputed">Disputed</option><option value="overdue">Overdue</option>
-                            </select>
-                            <input name="amount_paid" type="number" step="0.01" min="0" placeholder="Paid" className="input num w-24 py-1 text-xs" />
-                            <SubmitButton className="btn-secondary btn-sm" pending="…">Save</SubmitButton>
-                          </form>
+                        <td className="text-right">
+                          {inv.status !== "paid" ? (
+                            <Link href={`/projects/${project.id}?edit=${inv.id}#invoices`} scroll={false} className="btn-secondary btn-sm">
+                              Update
+                            </Link>
+                          ) : null}
                         </td>
                       ) : null}
                     </tr>
@@ -166,10 +171,10 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                       {isAdmin ? (
                         <td>
                           {!h.released ? (
-                            <form action={releaseHoldbackAction} className="flex items-center gap-1.5">
+                            <form action={releaseHoldbackAction}>
                               <input type="hidden" name="id" value={h.id} />
-                              <input type="date" name="released_date" defaultValue={today} className="input num w-36 py-1 text-xs" />
-                              <SubmitButton className="btn-secondary btn-sm" pending="…">Mark released</SubmitButton>
+                              <input type="hidden" name="released_date" value={today} />
+                              <SubmitButton className="btn-secondary btn-sm" pending="…" confirm="Record this holdback as released today?">Mark released</SubmitButton>
                             </form>
                           ) : null}
                         </td>
@@ -182,7 +187,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
           </div>
         </Card>
 
-        <div className="space-y-6">
+        <div className="space-y-3">
           <Card title="WSIB clearance">
             {cert ? (
               <div className="space-y-2 text-sm">
@@ -197,7 +202,7 @@ export default async function ProjectPage({ params }: { params: { id: string } }
 
           {isAdmin ? (
             <>
-              <Card title="Project dates">
+              <Disclosure title="Project dates" hint="Drive holdback timing">
                 <form action={updateProjectDatesAction} className="space-y-3">
                   <input type="hidden" name="id" value={project.id} />
                   <Field label="Contract start"><input type="date" name="contract_start_date" defaultValue={project.contract_start_date ?? ""} className="input num" /></Field>
@@ -205,8 +210,8 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                   <Field label="Payer AP email"><input type="email" name="gc_contact_email" defaultValue={project.gc_contact_email ?? ""} className="input" /></Field>
                   <SubmitButton className="btn-secondary" pending="Saving">Save</SubmitButton>
                 </form>
-              </Card>
-              <Card title="Record holdback period">
+              </Disclosure>
+              <Disclosure title="Record holdback period">
                 <form action={addHoldbackAction} className="space-y-3">
                   <input type="hidden" name="project_id" value={project.id} />
                   <div className="grid grid-cols-2 gap-3">
@@ -216,11 +221,47 @@ export default async function ProjectPage({ params }: { params: { id: string } }
                   <Field label="Amount retained (CAD)"><input type="number" step="0.01" min="0" name="amount_retained" required className="input num" /></Field>
                   <SubmitButton className="btn-secondary" pending="Saving">Add holdback</SubmitButton>
                 </form>
-              </Card>
+              </Disclosure>
             </>
           ) : null}
         </div>
       </div>
     </>
+  );
+}
+
+function InvoiceEditor({ invoice, projectId, today }: { invoice: Invoice; projectId: string; today: string }) {
+  const total = num(invoice.amount) + num(invoice.tax);
+  return (
+    <form key={invoice.id} action={updateInvoiceStatusAction} className="border-b border-line bg-raised/40 px-5 py-4">
+      <input type="hidden" name="id" value={invoice.id} />
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <div className="text-sm font-semibold">
+          Update invoice <span className="num">{invoice.number}</span>
+          <span className="ml-2 font-normal text-muted">total <Money value={total} /></span>
+        </div>
+        <Link href={`/projects/${projectId}#invoices`} scroll={false} className="text-xs text-muted hover:text-fg">Cancel</Link>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <Field label="Status">
+          <select name="status" defaultValue={invoice.status === "draft" ? "submitted" : invoice.status} className="input">
+            <option value="submitted">Submitted, awaiting payment</option>
+            <option value="partial">Partly paid</option>
+            <option value="paid">Paid in full</option>
+            <option value="disputed">Disputed by payer</option>
+            <option value="overdue">Overdue</option>
+          </select>
+        </Field>
+        <Field label="Total paid to date (CAD)" hint="Leave blank to keep the current amount">
+          <input name="amount_paid" type="number" step="0.01" min="0" placeholder={String(num(invoice.amount_paid))} className="input num" />
+        </Field>
+        <Field label="Dispute notice received" hint="Only used when disputed">
+          <input name="disputed_date" type="date" defaultValue={invoice.disputed_date ?? today} className="input num" />
+        </Field>
+        <div className="flex items-end">
+          <SubmitButton pending="Saving">Save</SubmitButton>
+        </div>
+      </div>
+    </form>
   );
 }

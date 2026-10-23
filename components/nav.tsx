@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ITEMS = [
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard", label: "Today" },
   { href: "/clients", label: "Clients" },
   { href: "/deadlines", label: "Deadlines" },
   { href: "/drafts", label: "Approval queue" },
@@ -15,7 +15,7 @@ const ITEMS = [
 export function Nav({ pendingDrafts }: { pendingDrafts: number }) {
   const pathname = usePathname();
   return (
-    <nav className="flex gap-1 overflow-x-auto md:flex-col">
+    <nav aria-label="Main" className="no-scrollbar -mx-1 flex gap-1 overflow-x-auto px-1 md:mx-0 md:flex-col md:px-0">
       {ITEMS.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`) ||
           (item.href === "/clients" && pathname.startsWith("/projects"));

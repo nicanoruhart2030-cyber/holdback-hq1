@@ -48,6 +48,8 @@ export type RuleId =
 
 export interface ConstructionActRule {
   id: RuleId;
+  /** Short plain-language name shown in the UI. */
+  label: string;
   description: string;
   trigger: TriggerEvent;
   /** Days from the trigger. Negative values count backward (warnings before an event). */
@@ -68,6 +70,7 @@ export interface ConstructionActRule {
 export const RULES = [
   {
     id: "proper_invoice_objection",
+    label: "Invoice objection window",
     description:
       "Payer must object in writing that an invoice is not a proper invoice; otherwise it is deemed proper.",
     trigger: "invoice_submitted",
@@ -79,6 +82,7 @@ export const RULES = [
   },
   {
     id: "owner_payment_window",
+    label: "Owner payment due",
     description: "Owner must pay a proper invoice no later than 28 days after receiving it.",
     trigger: "invoice_submitted",
     offsetDays: 28,
@@ -90,6 +94,7 @@ export const RULES = [
   },
   {
     id: "owner_notice_of_non_payment",
+    label: "Owner dispute window",
     description:
       "Owner disputing a proper invoice must give a notice of non-payment (Form 1) within 14 days of receiving it.",
     trigger: "invoice_submitted",
@@ -102,6 +107,7 @@ export const RULES = [
   },
   {
     id: "contractor_payment_window",
+    label: "GC payment due",
     description:
       "Contractor must pay a subcontractor within 7 days of being paid by the owner; outer bound modelled as 35 days after the subcontractor's proper invoice (28 + 7).",
     trigger: "invoice_submitted",
@@ -115,6 +121,7 @@ export const RULES = [
   },
   {
     id: "contractor_notice_of_non_payment",
+    label: "GC dispute window",
     description:
       "Contractor withholding payment from a subcontractor must give a notice of non-payment (Forms 2/3/5) within the payment window; outer bound modelled as 35 days after the subcontractor's proper invoice.",
     trigger: "invoice_submitted",
@@ -127,6 +134,7 @@ export const RULES = [
   },
   {
     id: "adjudication_referral",
+    label: "Adjudication window",
     description:
       "A payer that gives notice of non-payment undertakes to refer the dispute to adjudication within 21 days; if it does not, the subcontractor should consider referring it.",
     trigger: "notice_of_non_payment_received",
@@ -139,6 +147,7 @@ export const RULES = [
   },
   {
     id: "annual_holdback_notice",
+    label: "Annual holdback notice",
     description:
       "Owner must publish a notice of annual release of holdback within 14 days after each contract anniversary.",
     trigger: "contract_anniversary",
@@ -151,6 +160,7 @@ export const RULES = [
   },
   {
     id: "annual_holdback_owner_payment",
+    label: "Annual holdback paid by owner",
     description:
       "Owner pays annual holdback between 60 and 74 days after publishing the notice of annual release; latest date modelled.",
     trigger: "annual_holdback_notice_due",
@@ -162,6 +172,7 @@ export const RULES = [
   },
   {
     id: "annual_holdback_subcontract_release",
+    label: "Annual holdback paid to you",
     description:
       "Each contractor and subcontractor tier must release accrued holdback within 14 days of receiving its annual holdback payment.",
     trigger: "annual_holdback_payment_due",
@@ -174,6 +185,7 @@ export const RULES = [
   },
   {
     id: "lien_period",
+    label: "Lien period ends",
     description:
       "Lien rights expire 60 days after publication of the certificate of substantial performance (modelled from the substantial completion date).",
     trigger: "substantial_completion",
@@ -185,6 +197,7 @@ export const RULES = [
   },
   {
     id: "holdback_notice_of_non_payment",
+    label: "Holdback dispute window",
     description:
       "Owner refusing to release holdback must publish a notice of non-payment of holdback within 40 days after the certificate of substantial performance.",
     trigger: "substantial_completion",
@@ -196,6 +209,7 @@ export const RULES = [
   },
   {
     id: "holdback_release_after_lien",
+    label: "Holdback release due",
     description: "Basic holdback becomes payable 14 days after the lien period expires.",
     trigger: "lien_period_expiry",
     offsetDays: 14,
@@ -206,6 +220,7 @@ export const RULES = [
   },
   {
     id: "wsib_expiry_30",
+    label: "WSIB expires in 30 days",
     description: "WSIB clearance certificate expires in 30 days.",
     trigger: "wsib_expiry",
     offsetDays: -30,
@@ -216,6 +231,7 @@ export const RULES = [
   },
   {
     id: "wsib_expiry_14",
+    label: "WSIB expires in 14 days",
     description: "WSIB clearance certificate expires in 14 days.",
     trigger: "wsib_expiry",
     offsetDays: -14,
@@ -226,6 +242,7 @@ export const RULES = [
   },
   {
     id: "wsib_expiry_3",
+    label: "WSIB expires in 3 days",
     description: "WSIB clearance certificate expires in 3 days.",
     trigger: "wsib_expiry",
     offsetDays: -3,
@@ -236,6 +253,7 @@ export const RULES = [
   },
   {
     id: "wsib_expired",
+    label: "WSIB expired",
     description: "WSIB clearance certificate has expired; the payer may withhold payment until renewed.",
     trigger: "wsib_expiry",
     offsetDays: 0,
@@ -252,6 +270,11 @@ export const RULES_BY_ID: Record<RuleId, ConstructionActRule> = Object.fromEntri
 
 export function getRule(id: RuleId): ConstructionActRule {
   return RULES_BY_ID[id];
+}
+
+/** Plain-language label for a stored rule id (falls back to the id). */
+export function ruleLabel(id: string): string {
+  return (RULES_BY_ID as Record<string, ConstructionActRule | undefined>)[id]?.label ?? id;
 }
 
 /** Default holdback percentage (Construction Act s. 22). */

@@ -8,12 +8,14 @@ export function SubmitButton({
   className = "btn-primary",
   confirm,
   formAction,
+  noValidate,
 }: {
   children: React.ReactNode;
   pending?: string;
   className?: string;
   confirm?: string;
   formAction?: (fd: FormData) => void | Promise<void>;
+  noValidate?: boolean;
 }) {
   const status = useFormStatus();
   return (
@@ -22,6 +24,7 @@ export function SubmitButton({
       className={className}
       disabled={status.pending}
       formAction={formAction}
+      formNoValidate={noValidate}
       onClick={(e) => {
         if (confirm && !window.confirm(confirm)) e.preventDefault();
       }}

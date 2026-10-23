@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { addWsibAction, createProjectAction, deleteClientAction } from "../../actions";
+import { Disclosure } from "@/components/disclosure";
 import { IntakeDropzone } from "@/components/intake-dropzone";
 import { SubmitButton } from "@/components/submit-button";
 import { Card, DateText, Empty, Field, Money, Num, PageHeader, Stat, StatusBadge } from "@/components/ui";
@@ -10,6 +11,11 @@ import { moneyMetrics } from "@/lib/metrics";
 import { diffDays } from "@/lib/rules/calendar";
 import { createClient } from "@/lib/supabase/server";
 import type { Client, Holdback, Invoice, Project, WsibClearance } from "@/lib/types";
+
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const { data } = await createClient().from("clients").select("name").eq("id", params.id).maybeSingle<{ name: string }>();
+  return { title: data?.name ?? "Not found" };
+}
 
 export default async function ClientPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -67,7 +73,7 @@ export default async function ClientPage({ params }: { params: { id: string } })
                   {ps.map((p) => (
                     <tr key={p.id}>
                       <td><Link href={`/projects/${p.id}`} className="font-medium hover:text-mint">{p.name}</Link><div className="text-xs text-muted">{p.address}</div></td>
-                      <td className="text-muted">{p.gc_name}<div className="text-2xs uppercase tracking-wider text-faint">{p.payer_type}</div></td>
+                              <td className="max-w-[200px] text-muted"><div className="truncate">{p.gc_name}</div><div className="text-2xs uppercase tracking-wider text-faint">{p.payer_type}</div></td>
                       <td className="text-right"><Money value={Number(p.contract_value)} whole /></td>
                       <td className="text-right"><Num>{(invoices.data ?? []).filter((i) => i.project_id === p.id).length}</Num></td>
                       <td>{p.substantial_completion_date ? <DateText value={p.substantial_completion_date} /> : <span className="text-xs text-faint">In progress</span>}</td>
@@ -105,8 +111,8 @@ export default async function ClientPage({ params }: { params: { id: string } })
       </div>
 
       {isAdmin ? (
-        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <Card title="Add project" className="xl:col-span-2">
+        <div className="mt-6 space-y-3">
+          <Disclosure title="Add project" defaultOpen={ps.length === 0}>
             <form action={createProjectAction} className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <input type="hidden" name="client_id" value={client.id} />
               <Field label="Project name"><input name="name" required className="input" /></Field>
@@ -125,25 +131,19 @@ export default async function ClientPage({ params }: { params: { id: string } })
               <Field label="Substantial completion" hint="Leave blank until certified"><input name="substantial_completion_date" type="date" className="input num" /></Field>
               <div className="md:col-span-3"><SubmitButton pending="Creating">Create project</SubmitButton></div>
             </form>
-          </Card>
-          <Card title="Add WSIB clearance">
-            <form action={addWsibAction} className="space-y-4">
+          </Disclosure>
+          <Disclosure title="Add WSIB clearance">
+            <form action={addWsibAction} className="grid grid-cols-1 gap-4 md:grid-cols-4">
               <input type="hidden" name="client_id" value={client.id} />
               <Field label="Issued for (GC / principal)"><input name="gc_name" required className="input" list="gc-names" /></Field>
               <datalist id="gc-names">{[...new Set(ps.map((p) => p.gc_name))].map((g) => <option key={g} value={g} />)}</datalist>
               <Field label="Certificate number"><input name="certificate_number" required className="input num" /></Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Issued"><input name="issue_date" type="date" required className="input num" /></Field>
-                <Field label="Expires"><input name="expiry_date" type="date" required className="input num" /></Field>
-              </div>
-              <SubmitButton pending="Saving">Add clearance</SubmitButton>
+              <Field label="Issued"><input name="issue_date" type="date" required className="input num" /></Field>
+              <Field label="Expires"><input name="expiry_date" type="date" required className="input num" /></Field>
+              <div className="md:col-span-4"><SubmitButton pending="Saving">Add clearance</SubmitButton></div>
             </form>
-          </Card>
-        </div>
-      ) : null}
-
-      {isAdmin ? (
-        <Card title="Delete client data" className="mt-6">
+          </Disclosure>
+          <Disclosure title="Delete client data" hint="Permanent; for deletion requests" tone="danger">
           <form action={deleteClientAction} className="flex flex-wrap items-end gap-3">
             <input type="hidden" name="id" value={client.id} />
             <Field label={`Type "${client.name}" to permanently delete this client, its projects, invoices, documents and drafts`} className="min-w-[280px] flex-1">
@@ -151,7 +151,8 @@ export default async function ClientPage({ params }: { params: { id: string } })
             </Field>
             <SubmitButton className="btn-danger" pending="Deleting" confirm="This permanently deletes all of this client's data. Continue?">Delete permanently</SubmitButton>
           </form>
-        </Card>
+          </Disclosure>
+        </div>
       ) : null}
     </>
   );

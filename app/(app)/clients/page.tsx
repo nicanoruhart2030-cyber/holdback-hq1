@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClientAction } from "../actions";
+import { Disclosure } from "@/components/disclosure";
 import { Card, Empty, Field, Money, Num, PageHeader, StatusBadge } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { getProfile } from "@/lib/auth";
@@ -53,7 +54,7 @@ export default async function ClientsPage() {
                         <Link href={`/clients/${c.id}`} className="font-medium hover:text-mint">{c.name}</Link>
                         <div className="text-xs text-muted">{c.trade}</div>
                       </td>
-                      <td className="text-muted"><span className="capitalize">{c.plan_tier}</span> · <Money value={Number(c.monthly_fee)} />/mo</td>
+                      <td className="whitespace-nowrap text-muted"><span className="capitalize">{c.plan_tier}</span> · <Money value={Number(c.monthly_fee)} />/mo</td>
                       <td className="text-right"><Num>{ps.length}</Num></td>
                       <td className="text-right"><Money value={m.overdueTotal} className={m.overdueTotal > 0 ? "text-danger" : "text-muted"} /></td>
                       <td className="text-right"><Money value={m.holdbackOwed} /></td>
@@ -69,7 +70,8 @@ export default async function ClientsPage() {
       </Card>
 
       {profile?.role === "admin" ? (
-        <Card title="Add client" className="mt-6">
+        <div className="mt-6">
+        <Disclosure title="Add client" defaultOpen={list.length === 0}>
           <form action={createClientAction} className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <Field label="Business name"><input name="name" required className="input" /></Field>
             <Field label="Trade"><input name="trade" required className="input" placeholder="Electrical" /></Field>
@@ -89,7 +91,8 @@ export default async function ClientsPage() {
             </Field>
             <div className="md:col-span-4"><SubmitButton pending="Creating">Create client</SubmitButton></div>
           </form>
-        </Card>
+        </Disclosure>
+        </div>
       ) : null}
     </>
   );

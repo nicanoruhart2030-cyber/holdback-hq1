@@ -105,12 +105,34 @@ body {
     @apply border-b-0;
   }
 
+  /* Numbers, money and dates never break across lines. */
+  .table td .num,
+  .table td.num {
+    @apply whitespace-nowrap;
+  }
+
   .table tbody tr {
     @apply transition-colors hover:bg-raised/60;
   }
 
   .link {
     @apply text-fg underline decoration-line-strong underline-offset-4 hover:decoration-mint;
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
   }
 }
 

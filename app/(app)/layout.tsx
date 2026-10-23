@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { FlashToast } from "@/components/flash-toast";
 import { Nav } from "@/components/nav";
+import { readFlash } from "@/lib/flash";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -12,6 +14,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="mx-auto flex min-h-screen max-w-[1440px] flex-col md:flex-row">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-button focus:border focus:border-mint focus:bg-ink focus:px-3 focus:py-2 focus:text-sm">
+        Skip to content
+      </a>
       <aside className="no-print border-b border-line px-4 py-4 md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:border-b-0 md:border-r md:px-4 md:py-6">
         <Link href="/dashboard" className="mb-6 flex items-center gap-2 px-2">
           <span className="h-display text-lg text-fg">Holdback</span>
@@ -27,7 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/privacy" className="mt-2 block text-xs text-faint hover:text-muted">Privacy</Link>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 px-4 py-8 md:px-10">
+      <main id="main" tabIndex={-1} className="min-w-0 flex-1 px-4 py-8 focus:outline-none md:px-10">
         {profile.role !== "admin" && !profile.client_id ? (
           <div className="card p-6 text-sm text-muted">
             Your account is not linked to a client yet. Ask your agency contact to grant access.
@@ -36,6 +41,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           children
         )}
       </main>
+      <FlashToast flash={readFlash()} />
     </div>
   );
 }

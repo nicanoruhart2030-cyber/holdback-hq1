@@ -7,6 +7,11 @@ import { getProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { Scan } from "@/lib/types";
 
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const { data } = await createClient().from("scans").select("prospect_name, prospect_company").eq("id", params.id).maybeSingle<{ prospect_name: string; prospect_company: string | null }>();
+  return { title: data ? `Scan: ${data.prospect_company ?? data.prospect_name}` : "Scan" };
+}
+
 export default async function ScanReportPage({ params }: { params: { id: string } }) {
   const { profile } = await getProfile();
   if (profile?.role !== "admin") notFound();

@@ -1,11 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity";
 import { ensureDisclaimer } from "@/lib/ai/minimize";
 import { requireAdmin } from "@/lib/auth";
+import { setFlash } from "@/lib/flash";
 import { invoiceDueDate } from "@/lib/deadlines/engine";
 import { sendEmail } from "@/lib/email/resend";
 import { todayInToronto } from "@/lib/format";
@@ -48,7 +48,7 @@ export async function createClientAction(fd: FormData) {
   const { data, error } = await supabase.from("clients").insert(input).select("id").single<{ id: string }>();
   fail(error, "Create client");
   await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "client.created", entityType: "client", entityId: data!.id, clientId: data!.id, details: input });
-  revalidatePath("/clients");
+  setFlash(`Client ${input.name} created`);
   redirect(`/clients/${data!.id}`);
 }
 
@@ -60,7 +60,7 @@ export async function updateClientAction(fd: FormData) {
   const { error } = await supabase.from("clients").update(input).eq("id", id);
   fail(error, "Update client");
   await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "client.updated", entityType: "client", entityId: id, clientId: id, details: input });
-  revalidatePath(`/clients/${id}`);
+  setFlash("Client updated");
 }
 
 /** PIPEDA deletion on request: removes the client, all their rows and their documents. */
@@ -88,7 +88,7 @@ export async function deleteClientAction(fd: FormData) {
     entityId: id,
     details: { documents_removed: files?.length ?? 0 },
   });
-  revalidatePath("/clients");
+  setFlash(`${client.name} and all their records were deleted`);
   redirect("/clients");
 }
 
@@ -114,7 +114,7 @@ export async function createProjectAction(fd: FormData) {
   const { data, error } = await supabase.from("projects").insert(input).select("id").single<{ id: string }>();
   fail(error, "Create project");
   await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "project.created", entityType: "project", entityId: data!.id, clientId: input.client_id, details: input });
-  revalidatePath(`/clients/${input.client_id}`);
+  setFlash(`Project ${input.name} created`);
   redirect(`/projects/${data!.id}`);
 }
 
@@ -128,7 +128,7 @@ export async function updateProjectDatesAction(fd: FormData) {
   const { data, error } = await supabase.from("projects").update(input).eq("id", id).select("client_id").single<{ client_id: string }>();
   fail(error, "Update project");
   await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "project.updated", entityType: "project", entityId: id, clientId: data?.client_id, details: input });
-  revalidatePath(`/projects/${id}`);
+  setFlash("Project saved. Holdback dates update on the next sweep.");
 }
 
 // Invoices -------------------------------------------------------------------
@@ -180,8 +180,7 @@ export async function saveInvoiceAction(fd: FormData): Promise<{ ok: true; id: s
       clientId: project.client_id,
       details: { ...input, due_date, status, confirmed_after_extraction: input.extraction_confidence !== null },
     });
-    revalidatePath(`/projects/${input.project_id}`);
-    revalidatePath(`/clients/${project.client_id}`);
+    setFlash(`Invoice ${input.number} saved`);
     return { ok: true, id: data!.id };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Save failed" };
@@ -207,7 +206,8 @@ export async function updateInvoiceStatusAction(fd: FormData) {
   const { error } = await supabase.from("invoices").update(patch).eq("id", input.id);
   fail(error, "Update invoice");
   await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "invoice.status_changed", entityType: "invoice", entityId: input.id, clientId: inv.client_id, details: { from: inv.status, ...patch } });
-  revalidatePath(`/projects/${inv.project_id}`);
+  setFlash(input.status === "paid" ? "Marked paid" : input.status === "disputed" ? "Marked disputed; adjudication window is now tracked" : "Invoice updated");
+  redirect(`/projects/${inv.project_id}`);
 }
 
 // Holdbacks & WSIB -------------------------------------------------------------
@@ -221,7 +221,7 @@ export async function addHoldbackAction(fd: FormData) {
   const { data, error } = await supabase.from("holdbacks").insert(input).select("id, client_id").single<{ id: string; client_id: string }>();
   fail(error, "Add holdback");
   await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "holdback.created", entityType: "holdback", entityId: data!.id, clientId: data!.client_id, details: input });
-  revalidatePath(`/projects/${input.project_id}`);
+  setFlash("Holdback period recorded");
 }
 
 export async function releaseHoldbackAction(fd: FormData) {
@@ -236,7 +236,7 @@ export async function releaseHoldbackAction(fd: FormData) {
     .single<{ project_id: string; client_id: string }>();
   fail(error, "Release holdback");
   await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "holdback.released", entityType: "holdback", entityId: input.id, clientId: data?.client_id, details: input });
-  revalidatePath(`/projects/${data?.project_id}`);
+  setFlash("Holdback marked released");
 }
 
 export async function addWsibAction(fd: FormData) {
@@ -256,31 +256,37 @@ export async function addWsibAction(fd: FormData) {
   const { data, error } = await supabase.from("wsib_clearances").insert({ ...input, status }).select("id").single<{ id: string }>();
   fail(error, "Add WSIB clearance");
   await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "wsib.created", entityType: "wsib_clearance", entityId: data!.id, clientId: input.client_id, details: input });
-  revalidatePath(`/clients/${input.client_id}`);
+  setFlash("WSIB clearance added");
 }
 
 // Deadlines --------------------------------------------------------------------
 
-export async function resolveDeadlineAction(fd: FormData) {
+/** Dismissal is permanent for this obligation: the sweep will not regenerate it. */
+export async function dismissDeadlineAction(fd: FormData) {
   const admin = await requireAdmin();
   const id = z.string().uuid().parse(fd.get("id"));
   const supabase = createClient();
+  const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("deadlines")
-    .update({ resolved: true, resolved_at: new Date().toISOString() })
+    .update({ resolved: true, resolved_at: now, dismissed: true, dismissed_by: admin.id, dismissed_at: now })
     .eq("id", id)
-    .select("client_id, dedupe_key")
-    .single<{ client_id: string; dedupe_key: string }>();
-  fail(error, "Resolve deadline");
-  await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "deadline.resolved", entityType: "deadline", entityId: id, clientId: data?.client_id, details: { dedupe_key: data?.dedupe_key } });
-  revalidatePath("/deadlines");
-  revalidatePath("/dashboard");
+    .select("client_id, dedupe_key, title")
+    .single<{ client_id: string; dedupe_key: string; title: string }>();
+  fail(error, "Dismiss deadline");
+  await supabase
+    .from("drafts")
+    .update({ status: "rejected", error: "Deadline dismissed" })
+    .eq("deadline_id", id)
+    .eq("status", "pending");
+  await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "deadline.dismissed", entityType: "deadline", entityId: id, clientId: data?.client_id, details: { dedupe_key: data?.dedupe_key } });
+  setFlash(`Dismissed: ${data?.title ?? "deadline"}. It will not come back.`);
 }
 
 export async function runSweepNowAction() {
   const admin = await requireAdmin();
-  await runDailySweep(createAdminClient(), todayInToronto(), admin.id);
-  revalidatePath("/", "layout");
+  const r = await runDailySweep(createAdminClient(), todayInToronto(), admin.id);
+  setFlash(`Sweep done: ${r.deadlinesOpen} open deadlines, ${r.draftsCreated} new drafts`);
 }
 
 // Drafts -----------------------------------------------------------------------
@@ -308,7 +314,7 @@ export async function saveDraftAction(fd: FormData) {
   const { error } = await supabase.from("drafts").update({ to_email: input.to_email, subject: input.subject, body }).eq("id", input.id);
   fail(error, "Save draft");
   await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "draft.edited", entityType: "draft", entityId: input.id, clientId: draft.client_id, details: { subject: input.subject, to: input.to_email } });
-  revalidatePath("/drafts");
+  setFlash("Draft saved");
 }
 
 /** The only code path that sends email. Requires an explicit admin click. */
@@ -333,14 +339,14 @@ export async function approveAndSendDraftAction(fd: FormData) {
     const { id: providerId } = await sendEmail({ to: input.to_email, subject: input.subject, text: body, replyTo: draft.reply_to });
     await supabase.from("drafts").update({ status: "sent", sent_at: new Date().toISOString(), provider_message_id: providerId, error: null }).eq("id", input.id);
     await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "draft.sent", entityType: "draft", entityId: input.id, clientId: draft.client_id, details: { provider: "resend", provider_message_id: providerId, to: input.to_email } });
+    setFlash(`Sent to ${input.to_email}`);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Send failed";
     // Return to the queue so it can be retried; nothing was delivered.
     await supabase.from("drafts").update({ status: "pending", error: message, approved_by: null, approved_at: null }).eq("id", input.id);
     await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "draft.send_failed", entityType: "draft", entityId: input.id, clientId: draft.client_id, details: { error: message } });
+    setFlash(`Not sent: ${message}`, "error");
   }
-  revalidatePath("/drafts");
-  revalidatePath("/", "layout");
 }
 
 export async function rejectDraftAction(fd: FormData) {
@@ -350,8 +356,7 @@ export async function rejectDraftAction(fd: FormData) {
   const { error } = await supabase.from("drafts").update({ status: "rejected" }).eq("id", id);
   fail(error, "Reject draft");
   await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "draft.rejected", entityType: "draft", entityId: id, clientId: draft.client_id });
-  revalidatePath("/drafts");
-  revalidatePath("/", "layout");
+  setFlash("Draft rejected. It will not be redrafted for 7 days.");
 }
 
 // Scans ------------------------------------------------------------------------
@@ -382,6 +387,7 @@ export async function convertScanAction(fd: FormData) {
   const { error: e2 } = await supabase.from("scans").update({ converted_client_id: client!.id, expires_at: null }).eq("id", input.id);
   fail(e2, "Convert scan");
   await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "scan.converted", entityType: "scan", entityId: input.id, clientId: client!.id });
+  setFlash("Prospect converted to a client; scan data kept");
   redirect(`/clients/${client!.id}`);
 }
 
@@ -398,6 +404,6 @@ export async function deleteScanAction(fd: FormData) {
   const { error } = await supabase.from("scans").delete().eq("id", id);
   fail(error, "Delete scan");
   await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "scan.deleted", entityType: "scan", entityId: id, details: { files: paths.length } });
-  revalidatePath("/scan");
+  setFlash("Scan and its documents deleted");
   redirect("/scan");
 }
