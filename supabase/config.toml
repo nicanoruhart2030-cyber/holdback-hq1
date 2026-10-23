@@ -1,0 +1,13 @@
+# Minimal Supabase CLI config. `supabase start` fills in local defaults.
+project_id = "holdback-hq"
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+
+[auth.email]
+enable_signup = true

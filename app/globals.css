@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+/* Borders over shadows: nothing in this app casts a shadow. */
+*,
+*::before,
+*::after {
+  box-shadow: none !important;
+}
+
+html,
+body {
+  background: #080810;
+  color: #ececf1;
+}
+
+body {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01";
+}
+
+::selection {
+  background: rgba(0, 229, 160, 0.25);
+}
+
+:focus-visible {
+  outline: 1px solid #00e5a0;
+  outline-offset: 2px;
+}
+
+@layer components {
+  .h-display {
+    font-family: var(--font-syne), system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+
+  /* Every number, amount and date uses DM Mono. */
+  .num {
+    font-family: var(--font-dm-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .card {
+    @apply rounded-card border border-line bg-surface;
+  }
+
+  .label {
+    @apply text-2xs font-medium uppercase tracking-[0.08em] text-muted;
+  }
+
+  .input {
+    @apply w-full rounded-input border border-line-strong bg-ink px-3 py-2 text-sm text-fg placeholder:text-faint;
+    @apply transition-colors hover:border-faint focus:border-mint focus:outline-none;
+  }
+
+  .input-low {
+    @apply border-warn/70 bg-warn/[0.04];
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-button border px-3.5 py-2 text-sm font-medium transition-colors;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn border-mint bg-mint text-mint-ink hover:bg-mint-dim hover:border-mint-dim;
+  }
+
+  .btn-secondary {
+    @apply btn border-line-strong bg-transparent text-fg hover:border-faint hover:bg-raised;
+  }
+
+  .btn-danger {
+    @apply btn border-danger/50 bg-transparent text-danger hover:border-danger hover:bg-danger/10;
+  }
+
+  .btn-sm {
+    @apply px-2.5 py-1 text-xs;
+  }
+
+  .table {
+    @apply w-full border-collapse text-sm;
+  }
+
+  .table th {
+    @apply border-b border-line px-4 py-2.5 text-left text-2xs font-medium uppercase tracking-[0.08em] text-muted;
+  }
+
+  .table td {
+    @apply border-b border-line px-4 py-3 align-middle;
+  }
+
+  .table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .table tbody tr {
+    @apply transition-colors hover:bg-raised/60;
+  }
+
+  .link {
+    @apply text-fg underline decoration-line-strong underline-offset-4 hover:decoration-mint;
+  }
+}
+
+@media print {
+  html,
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
