@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { convertScanAction, deleteScanAction } from "../../actions";
 import { SubmitButton } from "@/components/submit-button";
-import { Card, DateText, Empty, Field, Money, Notice, Num, PageHeader, Stat } from "@/components/ui";
+import { Badge, Card, DateText, Empty, Field, Money, Notice, Num, PageHeader, Stat } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { Scan } from "@/lib/types";
@@ -34,11 +34,11 @@ export default async function ScanReportPage({ params }: { params: { id: string 
       ) : (
         <>
           {r.unreadable_count > 0 ? <div className="mb-5"><Notice tone="warn"><Num>{r.unreadable_count}</Num> files could not be read. Check OCR and AI configuration.</Notice></div> : null}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Stat label="Total outstanding" tone="mint" value={<Money value={r.total_outstanding} whole />} hint="Unpaid balances, net of holdback" />
-            <Stat label="Overdue" tone={r.total_overdue > 0 ? "danger" : "default"} value={<Money value={r.total_overdue} whole />} hint="Past the statutory payment window" />
+          <section aria-label="Scan totals" className="grid grid-cols-1 divide-y divide-line rounded-card border border-line md:grid-cols-3 md:divide-x md:divide-y-0">
+            <Stat label="Total outstanding" value={<Money value={r.total_outstanding} whole />} hint="Unpaid balances, net of holdback" />
+            <Stat label="Overdue" value={<Money value={r.total_overdue} whole />} hint={r.total_overdue > 0 ? <Badge tone="danger">Past the payment window</Badge> : "None"} />
             <Stat label="Unreleased holdback (est.)" value={<Money value={r.holdback_estimate} whole />} hint="Retained on invoices analysed" />
-          </div>
+          </section>
 
           <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
             <Card title="Overdue by payer" flush>

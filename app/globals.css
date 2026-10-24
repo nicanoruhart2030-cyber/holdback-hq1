@@ -2,53 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: dark;
-}
+/*
+ * Light, Cal.com-derived theme: a gray ladder for surfaces, ink for primary
+ * actions, colour only inside status badges. Cards and tables are separated by
+ * 1px borders; shadows are limited to buttons and popovers (tailwind.config.ts).
+ */
 
-/* Borders over shadows: nothing in this app casts a shadow. */
-*,
-*::before,
-*::after {
-  box-shadow: none !important;
+:root {
+  color-scheme: light;
 }
 
 html,
 body {
-  background: #080810;
-  color: #ececf1;
+  background: #ffffff;
+  color: #3c3e44;
 }
 
 body {
   font-family: var(--font-inter), system-ui, sans-serif;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 20px;
+  letter-spacing: -0.006em;
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "cv11", "ss01";
+  font-feature-settings: "cv11";
 }
 
 ::selection {
-  background: rgba(0, 229, 160, 0.25);
+  background: #dde7fd;
 }
 
 :focus-visible {
-  outline: 1px solid #00e5a0;
+  outline: 2px solid rgba(59, 130, 246, 0.5);
   outline-offset: 2px;
 }
 
 @layer components {
+  /* Page and section titles: Inter at display optical size, never above 600. */
   .h-display {
-    font-family: var(--font-syne), system-ui, sans-serif;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.05;
+    font-family: var(--font-inter), system-ui, sans-serif;
+    font-weight: 600;
+    font-optical-sizing: auto;
+    letter-spacing: -0.015em;
+    color: #070a0d;
   }
 
-  /* Every number, amount and date uses DM Mono. */
+  /* Money, counts and dates: tabular lining figures in Inter so columns align. */
   .num {
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum", "lnum", "cv11";
+  }
+
+  /* Identifiers only (invoice numbers, certificate numbers). */
+  .id {
     font-family: var(--font-dm-mono), ui-monospace, monospace;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
+    font-size: 13px;
+    letter-spacing: 0;
   }
 
   .card {
@@ -56,37 +64,50 @@ body {
   }
 
   .label {
-    @apply text-2xs font-medium uppercase tracking-[0.08em] text-muted;
+    @apply text-xs font-medium uppercase tracking-[0.02em] text-muted;
   }
 
   .input {
-    @apply w-full rounded-input border border-line-strong bg-ink px-3 py-2 text-sm text-fg placeholder:text-faint;
-    @apply transition-colors hover:border-faint focus:border-mint focus:outline-none;
+    @apply h-9 w-full rounded-input border border-line-strong bg-ink px-2.5 text-sm text-fg placeholder:text-muted;
+    @apply transition-colors hover:border-muted focus:border-fg focus:outline-none;
+  }
+
+  textarea.input {
+    @apply h-auto py-2;
   }
 
   .input-low {
-    @apply border-warn/70 bg-warn/[0.04];
+    @apply border-warn/60 bg-warn-bg/40;
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-button border px-3.5 py-2 text-sm font-medium transition-colors;
-    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-button border px-3 text-sm font-medium transition-colors;
+    @apply disabled:cursor-not-allowed disabled:opacity-30;
   }
 
   .btn-primary {
-    @apply btn border-mint bg-mint text-mint-ink hover:bg-mint-dim hover:border-mint-dim;
+    @apply btn border-accent bg-accent text-accent-fg shadow-button hover:bg-accent-hover hover:border-accent-hover active:shadow-button-pressed;
   }
 
   .btn-secondary {
-    @apply btn border-line-strong bg-transparent text-fg hover:border-faint hover:bg-raised;
+    @apply btn border-line-strong bg-surface text-body shadow-quiet hover:bg-raised hover:text-fg;
   }
 
+  .btn-ghost {
+    @apply btn border-transparent bg-transparent text-muted hover:border-line hover:bg-subtle hover:text-fg;
+  }
+
+  /* Destructive is outlined, never a solid red fill. */
   .btn-danger {
-    @apply btn border-danger/50 bg-transparent text-danger hover:border-danger hover:bg-danger/10;
+    @apply btn border-line-strong bg-surface text-danger hover:border-danger-border hover:bg-danger-bg;
   }
 
   .btn-sm {
-    @apply px-2.5 py-1 text-xs;
+    @apply h-7 rounded-lg px-2.5 text-[13px];
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 whitespace-nowrap rounded-badge px-1.5 py-1 text-xs font-medium;
   }
 
   .table {
@@ -94,11 +115,11 @@ body {
   }
 
   .table th {
-    @apply border-b border-line px-4 py-2.5 text-left text-2xs font-medium uppercase tracking-[0.08em] text-muted;
+    @apply whitespace-nowrap border-b border-line bg-raised px-3 py-2 text-left text-xs font-medium uppercase tracking-[0.02em] text-muted;
   }
 
   .table td {
-    @apply border-b border-line px-4 py-3 align-middle;
+    @apply border-b border-line px-3 py-2.5 align-middle;
   }
 
   .table tbody tr:last-child td {
@@ -112,11 +133,11 @@ body {
   }
 
   .table tbody tr {
-    @apply transition-colors hover:bg-raised/60;
+    @apply transition-colors hover:bg-raised;
   }
 
   .link {
-    @apply text-fg underline decoration-line-strong underline-offset-4 hover:decoration-mint;
+    @apply text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg;
   }
 }
 
@@ -137,11 +158,6 @@ body {
 }
 
 @media print {
-  html,
-  body {
-    background: #fff;
-    color: #000;
-  }
   .no-print {
     display: none !important;
   }

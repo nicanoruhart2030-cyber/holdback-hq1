@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { createClientAction } from "../actions";
 import { Disclosure } from "@/components/disclosure";
-import { Card, Empty, Field, Money, Num, PageHeader, StatusBadge } from "@/components/ui";
+import { AgingBar, Card, Empty, Field, Money, Num, PageHeader, StatusBadge } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
 import { getProfile } from "@/lib/auth";
 import { todayInToronto } from "@/lib/format";
-import { moneyMetrics } from "@/lib/metrics";
+import { agingBuckets, moneyMetrics } from "@/lib/metrics";
 import { createClient } from "@/lib/supabase/server";
 import type { Client, Holdback, Invoice, Project, WsibClearance } from "@/lib/types";
 
@@ -33,9 +33,9 @@ export default async function ClientsPage() {
           <Empty>No clients yet.</Empty>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table">
+            <table className="table min-w-[920px]">
               <thead>
-                <tr><th>Client</th><th>Plan</th><th className="text-right">Projects</th><th className="text-right">Overdue</th><th className="text-right">Holdback owed</th><th>WSIB</th><th>Status</th></tr>
+                <tr><th>Client</th><th>Receivables by age</th><th className="text-right">Outstanding</th><th className="text-right">Overdue</th><th className="text-right">Holdback</th><th>WSIB</th><th>Plan</th><th>Status</th></tr>
               </thead>
               <tbody>
                 {list.map((c) => {
@@ -46,19 +46,21 @@ export default async function ClientsPage() {
                     (holdbacks.data ?? []).filter((h) => h.client_id === c.id),
                     today,
                   );
+                  const aging = agingBuckets((invoices.data ?? []).filter((i) => i.client_id === c.id), ps, today);
                   const certs = (wsib.data ?? []).filter((w) => w.client_id === c.id);
                   const worst = certs.some((w) => w.status === "expired") ? "expired" : certs.some((w) => w.status === "expiring") ? "expiring" : certs.length ? "valid" : "none";
                   return (
                     <tr key={c.id}>
                       <td>
-                        <Link href={`/clients/${c.id}`} className="font-medium hover:text-mint">{c.name}</Link>
-                        <div className="text-xs text-muted">{c.trade}</div>
+                        <Link href={`/clients/${c.id}`} className="font-medium text-fg hover:underline hover:underline-offset-4">{c.name}</Link>
+                        <div className="text-[13px] text-muted">{c.trade} · <Num>{ps.length}</Num> projects</div>
                       </td>
+                      <td className="w-52"><AgingBar buckets={aging} compact /></td>
+                      <td className="text-right"><Money value={m.outstandingTotal} className="text-fg" /></td>
+                      <td className="text-right"><Money value={m.overdueTotal} className={m.overdueTotal > 0 ? "font-medium text-fg" : "text-muted"} /></td>
+                      <td className="text-right"><Money value={m.holdbackOwed} className="text-fg" /></td>
+                      <td>{worst === "none" ? <span className="text-[13px] text-muted">None on file</span> : <StatusBadge status={worst} />}</td>
                       <td className="whitespace-nowrap text-muted"><span className="capitalize">{c.plan_tier}</span> · <Money value={Number(c.monthly_fee)} />/mo</td>
-                      <td className="text-right"><Num>{ps.length}</Num></td>
-                      <td className="text-right"><Money value={m.overdueTotal} className={m.overdueTotal > 0 ? "text-danger" : "text-muted"} /></td>
-                      <td className="text-right"><Money value={m.holdbackOwed} /></td>
-                      <td>{worst === "none" ? <span className="text-xs text-faint">None on file</span> : <StatusBadge status={worst} />}</td>
                       <td><StatusBadge status={c.status} /></td>
                     </tr>
                   );

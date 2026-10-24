@@ -26,7 +26,7 @@ export function LoginForm() {
 
   if (state === "sent") {
     return (
-      <p className="mt-5 border-l-2 border-mint pl-3 text-sm text-fg">
+      <p className="mt-5 border-l-2 border-accent pl-3 text-sm text-fg">
         Check <span className="num">{email}</span> for your sign-in link.
       </p>
     );

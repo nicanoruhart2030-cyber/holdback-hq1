@@ -48,7 +48,7 @@ export function ScanUploader() {
         role="button"
         tabIndex={0}
         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && inputRef.current?.click()}
-        className={`cursor-pointer rounded-card border border-dashed px-6 py-8 text-center transition-colors ${dragging ? "border-mint bg-mint/[0.04]" : "border-line-strong hover:border-faint"}`}
+        className={`cursor-pointer rounded-card border border-dashed px-6 py-8 text-center transition-colors ${dragging ? "border-accent bg-accent/[0.04]" : "border-line-strong hover:border-faint"}`}
       >
         <div className="text-sm">Drop up to 40 past invoices (PDF or images)</div>
         <div className="mt-1 text-xs text-muted">No account needed for the prospect. Files and results are deleted after 30 days unless converted.</div>

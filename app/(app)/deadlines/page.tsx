@@ -13,7 +13,7 @@ import type { Client, Deadline } from "@/lib/types";
 export const metadata = { title: "Deadlines" };
 
 const SEVERITIES: Severity[] = ["overdue", "critical", "warning", "info"];
-const DOT: Record<Severity, string> = { overdue: "bg-danger", critical: "bg-warn", warning: "bg-warn/60", info: "bg-faint" };
+const CHIP: Record<Severity, string> = { overdue: "bg-danger-bg text-danger", critical: "bg-warn-bg text-warn", warning: "bg-warn-bg text-warn", info: "bg-emphasis text-body" };
 
 interface Search {
   view?: string;
@@ -39,6 +39,8 @@ export default async function DeadlinesPage({ searchParams }: { searchParams: Se
   ]);
   const list = deadlines ?? [];
   const clientName = new Map((clients ?? []).map((c) => [c.id, c.name]));
+  const agendaEnd = addCalendarDays(today, 14);
+  const agenda = list.filter((d) => d.due_date >= today && d.due_date <= agendaEnd);
 
   const href = (patch: Partial<Search>) => {
     const p = new URLSearchParams();
@@ -96,8 +98,8 @@ export default async function DeadlinesPage({ searchParams }: { searchParams: Se
                     const days = diffDays(today, d.due_date);
                     return (
                       <tr key={d.id}>
-                        <td className="whitespace-nowrap"><DateText value={d.due_date} /><div className="num text-2xs text-faint">{days < 0 ? `${-days}d ago` : days === 0 ? "today" : `in ${days}d`}</div></td>
-                        <td>{d.project_id ? <Link href={`/projects/${d.project_id}`} className="hover:text-mint">{d.title}</Link> : <Link href={`/clients/${d.client_id}`} className="hover:text-mint">{d.title}</Link>}</td>
+                        <td className="whitespace-nowrap"><DateText value={d.due_date} /><div className="num text-xs text-faint">{days < 0 ? `${-days}d ago` : days === 0 ? "today" : `in ${days}d`}</div></td>
+                        <td>{d.project_id ? <Link href={`/projects/${d.project_id}`} className="hover:text-accent">{d.title}</Link> : <Link href={`/clients/${d.client_id}`} className="hover:text-accent">{d.title}</Link>}</td>
                         <td className="max-w-[180px] truncate text-muted" title={clientName.get(d.client_id)}>{clientName.get(d.client_id)}</td>
                         <td className="whitespace-nowrap text-xs text-muted">{ruleLabel(d.rule_id)}</td>
                         <td className="text-right">{d.amount ? <Money value={Number(d.amount)} /> : <span className="text-faint">—</span>}</td>
@@ -119,7 +121,39 @@ export default async function DeadlinesPage({ searchParams }: { searchParams: Se
           )}
         </Card>
       ) : (
-        <CalendarView month={month} today={today} deadlines={list} href={href} />
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-start">
+          <div className="min-w-0 flex-1">
+            <CalendarView month={month} today={today} deadlines={list} href={href} />
+          </div>
+          <section aria-labelledby="agenda" className="xl:w-80">
+            <h2 id="agenda" className="mb-2 text-base font-semibold tracking-[-0.011em] text-fg">Next 14 days</h2>
+            {agenda.length === 0 ? (
+              <p className="rounded-md border border-line px-4 py-6 text-center text-muted">Nothing due in the next 14 days.</p>
+            ) : (
+              <ol className="divide-y divide-line rounded-md border border-line">
+                {agenda.map((d) => {
+                  const days = diffDays(today, d.due_date);
+                  return (
+                    <li key={d.id} className="grid grid-cols-[96px_minmax(0,1fr)_auto] items-start gap-3 px-3 py-2.5">
+                      <div>
+                        <DateText value={d.due_date} className="block font-medium text-fg" />
+                        <span className="text-xs text-muted">{days === 0 ? "Today" : days === 1 ? "Tomorrow" : `${days} days`}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <Link href={d.project_id ? `/projects/${d.project_id}` : `/clients/${d.client_id}`} className="block truncate text-fg hover:underline hover:underline-offset-4">
+                          {d.title}
+                        </Link>
+                        <div className="truncate text-[13px] text-muted">{clientName.get(d.client_id)} · {ruleLabel(d.rule_id)}</div>
+                      </div>
+                      {d.amount ? <Money value={Number(d.amount)} whole className="text-fg" /> : <span />}
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+            <p className="mt-2 text-[13px] text-muted">Dismissed items stay dismissed.</p>
+          </section>
+        </div>
       )}
     </>
   );
@@ -150,10 +184,10 @@ function CalendarView({ month, today, deadlines, href }: { month: string; today:
       }
     >
       {overdue.length > 0 ? (
-        <div className="border-b border-line px-5 py-2.5 text-xs text-danger"><Num>{overdue.length}</Num> overdue items fall before this view. Switch to list to see them.</div>
+        <div className="border-b border-line bg-danger-bg px-4 py-2 text-[13px] text-danger"><Num>{overdue.length}</Num> overdue items fall before this view. Switch to list to see them.</div>
       ) : null}
       <div className="grid grid-cols-7 border-b border-line">
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => <div key={d} className="label px-2 py-2">{d}</div>)}
+        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => <div key={d} className="label bg-raised px-2 py-2">{d}</div>)}
       </div>
       <div className="grid grid-cols-7">
         {days.map((day, i) => {
@@ -161,21 +195,20 @@ function CalendarView({ month, today, deadlines, href }: { month: string; today:
           const inMonth = day.slice(0, 7) === month;
           const holiday = isOntarioHoliday(day);
           return (
-            <div key={day} className={`min-h-[104px] border-line p-1.5 ${i % 7 !== 6 ? "border-r" : ""} ${i < 35 ? "border-b" : ""} ${inMonth ? "" : "bg-ink/60"} ${dayOfWeek(day) % 6 === 0 || holiday ? "bg-raised/30" : ""}`}>
+            <div key={day} className={`min-h-[96px] border-line p-1.5 ${i % 7 !== 6 ? "border-r" : ""} ${i < 35 ? "border-b" : ""} ${dayOfWeek(day) % 6 === 0 || holiday ? "bg-raised" : ""}`}>
               <div className="flex items-center justify-between px-0.5">
-                <span className={`num text-xs ${day === today ? "rounded-[4px] bg-mint px-1 text-mint-ink" : inMonth ? "text-muted" : "text-faint"}`}>{Number(day.slice(8))}</span>
-                {holiday ? <span className="text-2xs text-faint">holiday</span> : null}
+                <span className={`num inline-flex h-[22px] min-w-[22px] items-center justify-center text-[13px] font-medium ${day === today ? "rounded-full bg-accent text-accent-fg" : inMonth ? "text-fg" : "text-[#9CA3B0]"}`}>{Number(day.slice(8))}</span>
+                {holiday ? <span className="text-xs text-muted">Holiday</span> : null}
               </div>
               <ul className="mt-1 space-y-0.5">
                 {items.slice(0, 3).map((d) => (
                   <li key={d.id}>
-                    <Link href={d.project_id ? `/projects/${d.project_id}` : `/clients/${d.client_id}`} className="flex items-center gap-1.5 truncate rounded-[4px] px-1 py-0.5 text-2xs text-fg hover:bg-raised" title={d.title}>
-                      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[d.severity]}`} />
-                      <span className="truncate">{d.title}</span>
+                    <Link href={d.project_id ? `/projects/${d.project_id}` : `/clients/${d.client_id}`} className={`block truncate rounded-badge px-1.5 py-0.5 text-xs font-medium hover:underline ${CHIP[d.severity]}`} title={d.title}>
+                      {d.title}
                     </Link>
                   </li>
                 ))}
-                {items.length > 3 ? <li className="num px-1 text-2xs text-muted">+{items.length - 3} more</li> : null}
+                {items.length > 3 ? <li className="num px-1 text-xs text-muted">+{items.length - 3} more</li> : null}
               </ul>
             </div>
           );

@@ -3,11 +3,11 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 import { formatCAD, formatDate } from "@/lib/format";
 import type { Scan } from "@/lib/types";
 
-const INK = rgb(0.03, 0.03, 0.06);
-const MUTED = rgb(0.42, 0.42, 0.48);
-const LINE = rgb(0.85, 0.85, 0.88);
-const MINT = rgb(0, 0.62, 0.43);
-const RED = rgb(0.78, 0.2, 0.22);
+const INK = rgb(0.027, 0.039, 0.051);
+const MUTED = rgb(0.42, 0.45, 0.5);
+const LINE = rgb(0.898, 0.906, 0.922);
+const MUTED_INK = rgb(0.24, 0.24, 0.27);
+const RED = rgb(0.506, 0.114, 0.114);
 
 /** Standard PDF fonts are WinAnsi; strip characters they cannot encode. */
 function safe(text: string): string {
@@ -33,7 +33,7 @@ export async function renderScanPdf(scan: Scan): Promise<Uint8Array> {
     text(page, s, xRight - font.widthOfTextAtSize(safe(s), size), yy, font, size, color);
   const rule = (yy: number) => page.drawLine({ start: { x: M, y: yy }, end: { x: 612 - M, y: yy }, thickness: 0.5, color: LINE });
 
-  text(page, "HOLDBACK HQ  /  CASH LEAK SCAN", M, y, bold, 8, MINT);
+  text(page, "Holdback HQ  ·  Cash Leak Scan", M, y, bold, 9, MUTED_INK);
   right(formatDate(r.generated_on), 612 - M, y, mono, 8, MUTED);
   y -= 30;
   text(page, scan.prospect_company ?? scan.prospect_name, M, y, bold, 22);

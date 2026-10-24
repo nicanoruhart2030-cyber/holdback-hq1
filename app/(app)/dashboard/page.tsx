@@ -1,24 +1,26 @@
 import Link from "next/link";
 import { dismissDeadlineAction, runSweepNowAction } from "../actions";
 import { SubmitButton } from "@/components/submit-button";
-import { DateText, Money, Num, PageHeader, Stat } from "@/components/ui";
+import { AgingBar, Badge, type BadgeTone, DateText, Money, Num, PageHeader, SectionTitle, Stat, StatStrip } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
 import type { Severity } from "@/lib/deadlines/engine";
 import { formatCAD, todayInToronto } from "@/lib/format";
-import { moneyMetrics } from "@/lib/metrics";
+import { agingBuckets, moneyMetrics, payerStats } from "@/lib/metrics";
 import { addCalendarDays, diffDays } from "@/lib/rules/calendar";
 import { UPCOMING_WINDOW_DAYS, ruleLabel } from "@/lib/rules/ontario-construction-act";
 import { createClient } from "@/lib/supabase/server";
-import type { Client, Deadline, Holdback, Invoice, Project } from "@/lib/types";
+import type { Client, Deadline, Holdback, Invoice, Project, WsibClearance } from "@/lib/types";
 
 export const metadata = { title: "Today" };
 
-const DOT: Record<Severity, string> = {
-  overdue: "bg-danger",
-  critical: "bg-warn",
-  warning: "bg-warn/60",
-  info: "bg-faint",
-};
+const TONE: Record<Severity, BadgeTone> = { overdue: "danger", critical: "warn", warning: "warn", info: "neutral" };
+
+function whenLabel(days: number): string {
+  if (days < 0) return `${-days} ${days === -1 ? "day" : "days"} late`;
+  if (days === 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  return `In ${days} days`;
+}
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -27,13 +29,14 @@ export default async function DashboardPage() {
   const { profile } = await getProfile();
   const isAdmin = profile?.role === "admin";
 
-  const [invoices, projects, holdbacks, deadlines, clients, drafts, lastSweep] = await Promise.all([
+  const [invoices, projects, holdbacks, deadlines, clients, drafts, wsib, lastSweep] = await Promise.all([
     supabase.from("invoices").select("*").returns<Invoice[]>(),
-    supabase.from("projects").select("id, name, client_id, holdback_percent").returns<Project[]>(),
+    supabase.from("projects").select("id, name, client_id, gc_name, holdback_percent").returns<Project[]>(),
     supabase.from("holdbacks").select("*").returns<Holdback[]>(),
     supabase.from("deadlines").select("*").eq("resolved", false).lte("due_date", horizon).order("due_date").returns<Deadline[]>(),
     supabase.from("clients").select("id, name").returns<Client[]>(),
     supabase.from("drafts").select("id, deadline_id").eq("status", "pending").returns<Array<{ id: string; deadline_id: string | null }>>(),
+    supabase.from("wsib_clearances").select("*").neq("status", "valid").order("expiry_date").limit(5).returns<WsibClearance[]>(),
     supabase
       .from("activity_log")
       .select("created_at")
@@ -43,165 +46,235 @@ export default async function DashboardPage() {
       .maybeSingle<{ created_at: string }>(),
   ]);
 
-  const m = moneyMetrics(invoices.data ?? [], projects.data ?? [], holdbacks.data ?? [], today);
+  const inv = invoices.data ?? [];
+  const proj = projects.data ?? [];
+  const m = moneyMetrics(inv, proj, holdbacks.data ?? [], today);
+  const aging = agingBuckets(inv, proj, today);
+  const payers = payerStats(inv, proj, today).slice(0, 5);
   const clientName = new Map((clients.data ?? []).map((c) => [c.id, c.name]));
-  const projectName = new Map((projects.data ?? []).map((p) => [p.id, p.name]));
+  const projectName = new Map(proj.map((p) => [p.id, p.name]));
   const draftFor = new Map((drafts.data ?? []).filter((d) => d.deadline_id).map((d) => [d.deadline_id as string, d.id]));
-  const all = deadlines.data ?? [];
-  const overdue = all.filter((d) => d.due_date < today);
-  const upcoming = all.filter((d) => d.due_date >= today);
+  const items = deadlines.data ?? [];
   const pendingDrafts = drafts.data?.length ?? 0;
+  const outstanding = aging.reduce((s, b) => s + b.amount, 0);
 
   return (
     <>
       <PageHeader
-        eyebrow={<DateText value={today} />}
         title="Today"
         description={
-          all.length === 0 ? (
-            "Nothing needs action in the next 14 days."
-          ) : (
-            <>
-              <Money value={m.moneyAtRisk} whole className="text-fg" /> at risk. <Num className="text-fg">{overdue.length}</Num> overdue and{" "}
-              <Num className="text-fg">{upcoming.length}</Num> due in the next 14 days
-              {pendingDrafts > 0 ? (
-                <>
-                  ; <Num className="text-fg">{pendingDrafts}</Num> emails drafted for your approval
-                </>
-              ) : null}
-              .
-            </>
-          )
+          <>
+            <DateText value={today} />
+            {lastSweep.data ? (
+              <>
+                {" "}
+                · swept <DateText value={lastSweep.data.created_at.slice(0, 10)} />
+              </>
+            ) : (
+              " · not swept yet"
+            )}
+          </>
         }
         actions={
           isAdmin ? (
-            <form action={runSweepNowAction} className="flex items-center gap-3">
-              <span className="text-xs text-muted">
-                Last sweep {lastSweep.data ? <DateText value={lastSweep.data.created_at.slice(0, 10)} /> : "never"}
-              </span>
+            <form action={runSweepNowAction}>
               <SubmitButton className="btn-secondary" pending="Sweeping">
-                Run sweep now
+                Run sweep
               </SubmitButton>
             </form>
           ) : null
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Money at risk" tone="mint" value={<Money value={m.moneyAtRisk} whole />} hint="Overdue + disputed + holdback due within 14 days" />
+      <StatStrip label="Money at risk">
+        <Stat
+          label={`At risk, ${clientName.size} clients`}
+          value={<Money value={m.moneyAtRisk} whole />}
+          hint="Overdue + disputed + holdback due in 14 days"
+        />
         <Stat
           label="Overdue invoices"
-          tone={m.overdueTotal > 0 ? "danger" : "default"}
           value={<Money value={m.overdueTotal} whole />}
-          hint={<><Num>{m.overdueCount}</Num> past the payment window</>}
+          hint={m.overdueCount > 0 ? <Badge tone="danger">{m.overdueCount} past the payment window</Badge> : "None"}
+          href="/deadlines"
         />
-        <Stat label="Holdback owed" value={<Money value={m.holdbackOwed} whole />} hint={<><Money value={m.holdbackDueSoon} whole /> due within 14 days</>} />
         <Stat
-          label="Awaiting approval"
-          tone={pendingDrafts > 0 ? "warn" : "default"}
-          value={<Num>{pendingDrafts}</Num>}
-          hint="Drafted emails, none sent"
-          href="/drafts"
+          label="Disputed"
+          value={<Money value={m.disputedTotal} whole />}
+          hint={m.disputedTotal > 0 ? <Badge tone="warn">In adjudication windows</Badge> : "None"}
         />
-      </div>
+        <Stat
+          label="Holdback due within 14 days"
+          value={<Money value={m.holdbackDueSoon} whole />}
+          hint={
+            <Badge tone="info">
+              <Money value={m.holdbackOwed} whole /> held in total
+            </Badge>
+          }
+        />
+      </StatStrip>
 
-      <div className="mt-8 space-y-8">
-        <Inbox title="Overdue" items={overdue} today={today} empty="Nothing is overdue." {...{ clientName, projectName, draftFor, isAdmin }} />
-        <Inbox title="Due in the next 14 days" items={upcoming} today={today} empty="Nothing due in the next 14 days." {...{ clientName, projectName, draftFor, isAdmin }} />
-      </div>
-    </>
-  );
-}
+      <section aria-labelledby="aging" className="mt-6 rounded-card border border-line px-5 py-4">
+        <SectionTitle
+          id="aging"
+          aside={
+            <>
+              <Money value={outstanding} whole className="font-medium text-fg" /> outstanding, net of holdback
+            </>
+          }
+        >
+          Receivables by age
+        </SectionTitle>
+        <div className="mt-3">
+          <AgingBar buckets={aging} />
+        </div>
+      </section>
 
-function Inbox({
-  title,
-  items,
-  today,
-  empty,
-  clientName,
-  projectName,
-  draftFor,
-  isAdmin,
-}: {
-  title: string;
-  items: Deadline[];
-  today: string;
-  empty: string;
-  clientName: Map<string, string>;
-  projectName: Map<string, string>;
-  draftFor: Map<string, string>;
-  isAdmin: boolean;
-}) {
-  const total = items.reduce((s, d) => s + (d.amount ? Number(d.amount) : 0), 0);
-  return (
-    <section>
-      <div className="mb-3 flex items-baseline justify-between gap-4">
-        <h2 className="text-sm font-semibold">
-          {title} <Num className="ml-1 text-muted">{items.length}</Num>
-        </h2>
-        {total > 0 ? <span className="num text-xs text-muted">{formatCAD(total, { whole: true })} involved</span> : null}
-      </div>
-      {items.length === 0 ? (
-        <div className="card px-5 py-6 text-sm text-muted">{empty}</div>
-      ) : (
-        <ul className="card divide-y divide-line">
-          {items.map((d) => {
-            const days = diffDays(today, d.due_date);
-            const draftId = draftFor.get(d.id);
-            const target = d.project_id ? `/projects/${d.project_id}` : `/clients/${d.client_id}`;
-            return (
-              <li key={d.id} className="flex flex-col gap-3 px-5 py-4 lg:flex-row lg:items-center">
-                <div className="flex min-w-0 flex-1 items-start gap-3">
-                  <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${DOT[d.severity]}`} aria-hidden />
-                  <div className="min-w-0">
-                    <Link href={target} className="block truncate text-sm text-fg hover:text-mint">
-                      {d.title}
-                    </Link>
-                    <div className="mt-0.5 truncate text-xs text-muted">
-                      {clientName.get(d.client_id)}
-                      {d.project_id ? ` · ${projectName.get(d.project_id) ?? ""}` : ""} · {ruleLabel(d.rule_id)}
+      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section aria-labelledby="work" className="min-w-0">
+          <SectionTitle
+            id="work"
+            aside={
+              <>
+                {pendingDrafts > 0 ? (
+                  <Link href="/drafts" className="mr-3 hover:text-fg">
+                    <Num>{pendingDrafts}</Num> emails to approve
+                  </Link>
+                ) : null}
+                <Link href="/deadlines" className="hover:text-fg">
+                  All deadlines
+                </Link>
+              </>
+            }
+          >
+            Needs action
+          </SectionTitle>
+          {items.length === 0 ? (
+            <div className="rounded-card border border-dashed border-line-strong px-6 py-10 text-center">
+              <div className="text-base font-semibold text-fg">Nothing needs action</div>
+              <p className="mx-auto mt-1 max-w-sm text-muted">Nothing is overdue or due in the next 14 days.</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-line rounded-md border border-line">
+              {items.map((d) => {
+                const days = diffDays(today, d.due_date);
+                const draftId = draftFor.get(d.id);
+                const target = d.project_id ? `/projects/${d.project_id}` : `/clients/${d.client_id}`;
+                return (
+                  <li key={d.id} className="flex flex-col gap-2 px-4 py-3 lg:flex-row lg:items-center lg:gap-4">
+                    <div className="lg:w-36">
+                      <Badge tone={TONE[d.severity]}>{whenLabel(days)}</Badge>
                     </div>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pl-[18px] lg:flex-nowrap lg:pl-0">
-                  <div className="w-24 lg:text-right">{d.amount ? <Money value={Number(d.amount)} className="text-sm" /> : <span className="text-faint">—</span>}</div>
-                  <div className="w-28 lg:text-right">
-                    <DateText value={d.due_date} className={`text-sm ${days < 0 ? "text-danger" : ""}`} />
-                    <div className="num text-2xs text-muted">{days < 0 ? `${-days} days late` : days === 0 ? "today" : `in ${days} days`}</div>
-                  </div>
-                  <div className="flex items-center gap-1 lg:w-52 lg:justify-end">
-                    {draftId ? (
-                      <Link href={`/drafts?id=${draftId}`} className="btn-primary btn-sm">
-                        Review email
+                    <div className="min-w-0 flex-1">
+                      <Link href={target} className="block truncate font-medium text-fg hover:underline hover:underline-offset-4">
+                        {d.title}
                       </Link>
-                    ) : d.entity_type === "invoice" && d.project_id ? (
-                      <Link href={`/projects/${d.project_id}?edit=${d.entity_id}`} className="btn-secondary btn-sm">
-                        Update invoice
-                      </Link>
-                    ) : (
-                      <Link href={target} className="btn-secondary btn-sm">
+                      <div className="truncate text-[13px] text-muted">
+                        {clientName.get(d.client_id)}
+                        {d.project_id ? ` · ${projectName.get(d.project_id) ?? ""}` : ""} · {ruleLabel(d.rule_id)}
+                      </div>
+                    </div>
+                    <div className="lg:w-28 lg:text-right">
+                      {d.amount ? <Money value={Number(d.amount)} className="font-medium text-fg" /> : <span className="text-muted">—</span>}
+                      <div className="text-xs text-muted">
+                        due <DateText value={d.due_date} />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 lg:w-48 lg:justify-end">
+                      {draftId ? (
+                        <Link href={`/drafts?id=${draftId}`} className="btn-secondary btn-sm">
+                          Review email
+                        </Link>
+                      ) : d.entity_type === "invoice" && d.project_id ? (
+                        <Link href={`/projects/${d.project_id}?edit=${d.entity_id}#invoices`} className="btn-secondary btn-sm">
+                          Update invoice
+                        </Link>
+                      ) : (
+                        <Link href={target} className="btn-secondary btn-sm">
+                          Open
+                        </Link>
+                      )}
+                      {isAdmin ? (
+                        <form action={dismissDeadlineAction}>
+                          <input type="hidden" name="id" value={d.id} />
+                          <SubmitButton className="btn-ghost btn-sm" pending="…" confirm="Dismiss this item? It will not come back in future sweeps.">
+                            Dismiss
+                          </SubmitButton>
+                        </form>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        <aside className="flex min-w-0 flex-col gap-6">
+          <section aria-labelledby="payers">
+            <SectionTitle id="payers">Slowest payers</SectionTitle>
+            {payers.length === 0 ? (
+              <p className="rounded-md border border-line px-4 py-6 text-center text-muted">No open invoices.</p>
+            ) : (
+              <div className="overflow-hidden rounded-md border border-line">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Payer</th>
+                      <th scope="col" className="text-right">
+                        Avg age
+                      </th>
+                      <th scope="col" className="text-right">
                         Open
-                      </Link>
-                    )}
-                    {isAdmin ? (
-                      <form action={dismissDeadlineAction}>
-                        <input type="hidden" name="id" value={d.id} />
-                        <SubmitButton
-                          className="btn btn-sm border-transparent text-muted hover:text-fg"
-                          pending="…"
-                          confirm="Dismiss this item? It will not come back in future sweeps."
-                        >
-                          Dismiss
-                        </SubmitButton>
-                      </form>
-                    ) : null}
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payers.map((p) => (
+                      <tr key={p.name}>
+                        <td className="max-w-[190px] truncate text-fg" title={p.name}>
+                          {p.name}
+                        </td>
+                        <td className={`num text-right ${p.avgDaysOutstanding > 35 ? "font-medium text-danger" : ""}`}>{p.avgDaysOutstanding}d</td>
+                        <td className="num text-right">{formatCAD(p.openBalance, { whole: true })}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="mt-2 text-[13px] text-muted">
+              Average days since submission on open invoices. The window is <Num>35</Num> days from a GC, <Num>28</Num> from an owner.
+            </p>
+          </section>
+
+          <section aria-labelledby="wsib">
+            <SectionTitle id="wsib" aside={<Link href="/clients" className="hover:text-fg">All clients</Link>}>
+              WSIB clearances
+            </SectionTitle>
+            {(wsib.data ?? []).length === 0 ? (
+              <p className="rounded-md border border-line px-4 py-6 text-center text-muted">All clearances are current.</p>
+            ) : (
+              <ul className="divide-y divide-line rounded-md border border-line">
+                {(wsib.data ?? []).map((w) => {
+                  const days = diffDays(today, w.expiry_date);
+                  return (
+                    <li key={w.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                      <div className="min-w-0">
+                        <div className="truncate text-fg">{clientName.get(w.client_id)}</div>
+                        <div className="truncate text-[13px] text-muted">for {w.gc_name}</div>
+                      </div>
+                      <Badge tone={days < 0 ? "danger" : "warn"}>{days < 0 ? "Expired" : `Expires in ${days}d`}</Badge>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </aside>
+      </div>
+
+      <p className="mt-8 text-xs text-muted">Deadlines use unverified Construction Act defaults pending legal review. An administrative tool, not legal advice.</p>
+    </>
   );
 }

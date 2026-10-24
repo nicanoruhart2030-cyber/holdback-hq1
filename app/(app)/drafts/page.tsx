@@ -69,7 +69,7 @@ export default async function DraftsPage({ searchParams }: { searchParams: { id?
                     <Link
                       href={`/drafts?id=${d.id}`}
                       aria-current={active ? "true" : undefined}
-                      className={`block border-l-2 px-4 py-3 transition-colors ${active ? "border-mint bg-raised" : "border-transparent hover:bg-raised/50"}`}
+                      className={`block border-l-2 px-4 py-3 transition-colors ${active ? "border-accent bg-raised" : "border-transparent hover:bg-raised/50"}`}
                     >
                       <div className="flex items-baseline justify-between gap-3">
                         <span className="truncate text-sm text-fg">{clientName.get(d.client_id)}</span>
@@ -81,7 +81,7 @@ export default async function DraftsPage({ searchParams }: { searchParams: { id?
                           <span className={`num shrink-0 ${days > 0 ? "text-danger" : "text-muted"}`}>{days > 0 ? `${days}d late` : days === 0 ? "today" : `in ${-days}d`}</span>
                         ) : null}
                       </div>
-                      {d.error ? <div className="mt-1 text-2xs text-danger">Last send failed</div> : null}
+                      {d.error ? <div className="mt-1 text-xs text-danger">Last send failed</div> : null}
                     </Link>
                   </li>
                 );
@@ -168,7 +168,7 @@ function DraftEditor({
               <dt className="label">Due</dt>
               <dd className="mt-1">
                 <DateText value={deadline.due_date} className={days !== null && days > 0 ? "text-danger" : ""} />
-                {days !== null && days > 0 ? <div className="num text-2xs text-danger">{days} days late</div> : null}
+                {days !== null && days > 0 ? <div className="num text-xs text-danger">{days} days late</div> : null}
               </dd>
             </div>
           </dl>

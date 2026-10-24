@@ -4,7 +4,7 @@ import { addWsibAction, createProjectAction, deleteClientAction } from "../../ac
 import { Disclosure } from "@/components/disclosure";
 import { IntakeDropzone } from "@/components/intake-dropzone";
 import { SubmitButton } from "@/components/submit-button";
-import { Card, DateText, Empty, Field, Money, Num, PageHeader, Stat, StatusBadge } from "@/components/ui";
+import { Badge, Card, DateText, Empty, Field, Money, Num, PageHeader, Stat, StatStrip, StatusBadge } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
 import { todayInToronto } from "@/lib/format";
 import { moneyMetrics } from "@/lib/metrics";
@@ -48,12 +48,12 @@ export default async function ClientPage({ params }: { params: { id: string } })
         actions={<StatusBadge status={client.status} />}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <StatStrip label="Client totals">
         <Stat label="Outstanding" value={<Money value={m.outstandingTotal} whole />} />
-        <Stat label="Overdue" tone={m.overdueTotal > 0 ? "danger" : "default"} value={<Money value={m.overdueTotal} whole />} />
-        <Stat label="Disputed" tone={m.disputedTotal > 0 ? "warn" : "default"} value={<Money value={m.disputedTotal} whole />} />
+        <Stat label="Overdue" value={<Money value={m.overdueTotal} whole />} hint={m.overdueTotal > 0 ? <Badge tone="danger">Past the payment window</Badge> : "None"} />
+        <Stat label="Disputed" value={<Money value={m.disputedTotal} whole />} hint={m.disputedTotal > 0 ? <Badge tone="warn">In adjudication windows</Badge> : "None"} />
         <Stat label="Holdback owed" value={<Money value={m.holdbackOwed} whole />} />
-      </div>
+      </StatStrip>
 
       {isAdmin ? (
         <div className="mt-6">
@@ -72,8 +72,8 @@ export default async function ClientPage({ params }: { params: { id: string } })
                 <tbody>
                   {ps.map((p) => (
                     <tr key={p.id}>
-                      <td><Link href={`/projects/${p.id}`} className="font-medium hover:text-mint">{p.name}</Link><div className="text-xs text-muted">{p.address}</div></td>
-                              <td className="max-w-[200px] text-muted"><div className="truncate">{p.gc_name}</div><div className="text-2xs uppercase tracking-wider text-faint">{p.payer_type}</div></td>
+                      <td><Link href={`/projects/${p.id}`} className="font-medium hover:text-accent">{p.name}</Link><div className="text-xs text-muted">{p.address}</div></td>
+                              <td className="max-w-[200px] text-muted"><div className="truncate">{p.gc_name}</div><div className="text-xs uppercase tracking-wider text-faint">{p.payer_type}</div></td>
                       <td className="text-right"><Money value={Number(p.contract_value)} whole /></td>
                       <td className="text-right"><Num>{(invoices.data ?? []).filter((i) => i.project_id === p.id).length}</Num></td>
                       <td>{p.substantial_completion_date ? <DateText value={p.substantial_completion_date} /> : <span className="text-xs text-faint">In progress</span>}</td>

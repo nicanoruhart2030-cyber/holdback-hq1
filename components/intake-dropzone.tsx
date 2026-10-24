@@ -81,7 +81,7 @@ export function IntakeDropzone({ clientId, projects }: { clientId: string; proje
           tabIndex={0}
           onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && inputRef.current?.click()}
           className={`flex cursor-pointer flex-col items-center justify-center rounded-card border border-dashed px-6 py-8 text-center transition-colors ${
-            dragging ? "border-mint bg-mint/[0.04]" : "border-line-strong hover:border-faint"
+            dragging ? "border-accent bg-accent/[0.04]" : "border-line-strong hover:border-faint"
           }`}
         >
           <div className="text-sm text-fg">Drop invoices here or click to choose files</div>
@@ -104,7 +104,7 @@ export function IntakeDropzone({ clientId, projects }: { clientId: string; proje
             {queue.map((item, i) => (
               <li key={`${item.file.name}-${i}`} className="flex items-center justify-between gap-3 py-2">
                 <span className="truncate">{item.file.name}</span>
-                <span className={`text-xs ${item.state === "error" ? "text-danger" : item.state === "saved" ? "text-mint" : "text-muted"}`}>
+                <span className={`text-xs ${item.state === "error" ? "text-danger" : item.state === "saved" ? "text-accent" : "text-muted"}`}>
                   {item.state === "error" ? item.error : item.state === "uploading" ? "Extracting" : item.state}
                 </span>
               </li>

@@ -30,7 +30,7 @@ export default async function ScanPage() {
               <tbody>
                 {(scans ?? []).map((s) => (
                   <tr key={s.id}>
-                    <td><Link href={`/scan/${s.id}`} className="font-medium hover:text-mint">{s.prospect_company ?? s.prospect_name}</Link><div className="text-xs text-muted">{s.prospect_name}</div></td>
+                    <td><Link href={`/scan/${s.id}`} className="font-medium hover:text-accent">{s.prospect_company ?? s.prospect_name}</Link><div className="text-xs text-muted">{s.prospect_name}</div></td>
                     <td><DateText value={s.created_at.slice(0, 10)} /></td>
                     <td className="text-right"><Money value={s.report?.total_outstanding ?? null} whole /></td>
                     <td className="text-right"><Money value={s.report?.total_overdue ?? null} whole className={(s.report?.total_overdue ?? 0) > 0 ? "text-danger" : ""} /></td>

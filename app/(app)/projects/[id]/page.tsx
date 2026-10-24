@@ -4,7 +4,8 @@ import { addHoldbackAction, releaseHoldbackAction, updateInvoiceStatusAction, up
 import { Disclosure } from "@/components/disclosure";
 import { SubmitButton } from "@/components/submit-button";
 import { LOW_CONFIDENCE } from "@/lib/ai/confidence";
-import { Card, DateText, Empty, Field, Money, Num, PageHeader, Stat, StatusBadge } from "@/components/ui";
+import { HoldbackTrack } from "@/components/holdback-track";
+import { Badge, Card, DateText, Empty, Field, Money, Num, PageHeader, StatusBadge } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
 import { annualCycleCovering, disputeWindowCloses, invoiceBalance, lienSchedule } from "@/lib/deadlines/engine";
 import { todayInToronto } from "@/lib/format";
@@ -60,6 +61,9 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
   }
   for (const h of hbs) if (h.release_due_date && !h.released) milestones.push({ date: h.release_due_date, label: `Release of ${new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(num(h.amount_retained))} holdback` });
   milestones.sort((a, b) => compareDates(a.date, b.date));
+  const billed = invs.filter((i) => i.status !== "draft").reduce((s, i) => s + num(i.amount) + num(i.tax), 0);
+  const collected = invs.reduce((s, i) => s + num(i.amount_paid), 0);
+  const pctOf = (v: number) => `${Math.round((v / Math.max(1, billed)) * 100)}%`;
 
   return (
     <>
@@ -69,12 +73,39 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
         description={<>{project.gc_name} ({project.payer_type === "owner" ? "owner, direct contract" : "general contractor"}) · {project.address ?? "No address"} · holdback <Num>{pct}%</Num></>}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Contract value" value={<Money value={num(project.contract_value)} whole />} />
-        <Stat label="Outstanding" value={<Money value={m.outstandingTotal} whole />} />
-        <Stat label="Overdue" tone={m.overdueTotal > 0 ? "danger" : "default"} value={<Money value={m.overdueTotal} whole />} />
-        <Stat label="Holdback owed" value={<Money value={m.holdbackOwed} whole />} hint={<><Money value={m.holdbackDueSoon} whole /> due within 14 days</>} />
-      </div>
+      <section aria-label="Project totals" className="rounded-card border border-line">
+        <dl className="grid grid-cols-2 divide-line sm:grid-cols-3 lg:grid-cols-5 lg:divide-x">
+          {[
+            ["Contract", num(project.contract_value)],
+            ["Billed to date", billed],
+            ["Collected", collected],
+            ["Payable now", m.outstandingTotal],
+            ["Holdback retained", m.holdbackOwed],
+          ].map(([label, value]) => (
+            <div key={label as string} className="px-5 py-4">
+              <dt className="text-[13px] text-muted">{label}</dt>
+              <dd className="mt-1 text-xl font-semibold tracking-[-0.015em] text-fg">
+                <Money value={value as number} whole />
+              </dd>
+            </div>
+          ))}
+        </dl>
+        {billed > 0 ? (
+          <div className="px-5 pb-4">
+            <div aria-hidden="true" className="flex h-1.5 gap-0.5">
+              <div className="rounded-sm bg-body" style={{ flex: `${collected} 1 0` }} />
+              <div className="rounded-sm bg-aging-d60" style={{ flex: `${m.outstandingTotal} 1 0` }} />
+              <div className="rounded-sm bg-line-strong" style={{ flex: `${m.holdbackOwed} 1 0` }} />
+            </div>
+            <div className="mt-2 flex flex-wrap gap-5 text-[13px] text-muted">
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-body" />Collected <Num className="text-fg">{pctOf(collected)}</Num></span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-aging-d60" />Payable now <Num className="text-fg">{pctOf(m.outstandingTotal)}</Num></span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-line-strong" />Holdback <Num className="text-fg">{pctOf(m.holdbackOwed)}</Num></span>
+              {m.overdueTotal > 0 ? <Badge tone="danger"><Money value={m.overdueTotal} whole /> overdue</Badge> : null}
+            </div>
+          </div>
+        ) : null}
+      </section>
 
       <div id="invoices" />
       <Card title="Invoices" flush className="mt-6">
@@ -98,22 +129,22 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
                   return (
                     <tr key={inv.id} id={`invoice-${inv.id}`} className={editing?.id === inv.id ? "bg-raised" : undefined}>
                       <td>
-                        <span className="num">{inv.number}</span>
+                        <span className="id text-fg">{inv.number}</span>
                         {inv.source_file_path ? (
-                          <a href={`/api/documents?path=${encodeURIComponent(inv.source_file_path)}`} target="_blank" rel="noreferrer" className="ml-2 text-xs text-muted hover:text-mint">PDF</a>
+                          <a href={`/api/documents?path=${encodeURIComponent(inv.source_file_path)}`} target="_blank" rel="noreferrer" className="ml-2 text-[13px] text-muted underline underline-offset-4 hover:text-fg">PDF</a>
                         ) : null}
-                        {inv.extraction_confidence !== null && num(inv.extraction_confidence) < LOW_CONFIDENCE ? <div className="text-2xs text-warn">Low extraction confidence</div> : null}
+                        {inv.extraction_confidence !== null && num(inv.extraction_confidence) < LOW_CONFIDENCE ? <div className="text-xs text-warn">Check extracted fields</div> : null}
                       </td>
                       <td><DateText value={inv.submitted_date} /></td>
                       <td>
                         <DateText value={inv.due_date} className={inv.status === "overdue" ? "text-danger" : ""} />
-                        {inv.status === "overdue" && inv.due_date ? <div className="num text-2xs text-danger">{diffDays(inv.due_date, today)}d late</div> : null}
+                        {inv.status === "overdue" && inv.due_date ? <div className="num text-xs text-danger">{diffDays(inv.due_date, today)}d late</div> : null}
                       </td>
                       <td className="text-right"><Money value={total} /></td>
                       <td className="text-right"><Money value={num(inv.amount_paid)} className="text-muted" /></td>
                       <td className="text-right">
                         <Money value={balance} />
-                        {lapsed && balance > 0 ? <div className="text-2xs text-muted">dispute window lapsed</div> : null}
+                        {lapsed && balance > 0 ? <div className="text-xs text-muted">dispute window lapsed</div> : null}
                       </td>
                       <td><StatusBadge status={inv.status} /></td>
                       {isAdmin ? (
@@ -139,21 +170,7 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
           {milestones.length === 0 ? (
             <p className="text-sm text-muted">Add a contract start or substantial completion date to compute holdback timing.</p>
           ) : (
-            <ol className="relative ml-1 border-l border-line">
-              {milestones.map((ms, i) => {
-                const past = compareDates(ms.date, today) < 0;
-                const isToday = ms.date === today;
-                return (
-                  <li key={`${ms.date}-${i}`} className="relative pb-5 pl-6 last:pb-0">
-                    <span className={`absolute -left-[5px] top-1.5 h-[9px] w-[9px] rounded-full border ${isToday ? "border-mint bg-mint" : past ? "border-line-strong bg-line-strong" : "border-mint bg-ink"}`} />
-                    <div className="flex flex-wrap items-baseline gap-x-3">
-                      <DateText value={ms.date} className={past ? "text-muted" : "text-fg"} />
-                      <span className={`text-sm ${past ? "text-muted" : "text-fg"}`}>{ms.label}</span>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
+            <HoldbackTrack milestones={milestones} today={today} />
           )}
           <div className="mt-6 overflow-x-auto border-t border-line pt-4">
             <table className="table">
@@ -167,7 +184,7 @@ export default async function ProjectPage({ params, searchParams }: { params: { 
                       <td><DateText value={h.period_start} /> <span className="text-faint">to</span> <DateText value={h.period_end} /></td>
                       <td className="text-right"><Money value={num(h.amount_retained)} /></td>
                       <td><DateText value={h.release_due_date} className={!h.released && h.release_due_date && h.release_due_date < today ? "text-danger" : ""} /></td>
-                      <td>{h.released ? <><StatusBadge status="released" /> <DateText value={h.released_date} className="ml-1 text-xs text-muted" /></> : <StatusBadge status="pending" />}</td>
+                      <td>{h.released ? <><StatusBadge status="released" /> <DateText value={h.released_date} className="ml-1 text-xs text-muted" /></> : <StatusBadge status="held" />}</td>
                       {isAdmin ? (
                         <td>
                           {!h.released ? (
