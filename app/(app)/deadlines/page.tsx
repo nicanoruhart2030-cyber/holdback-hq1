@@ -1,10 +1,7 @@
 import Link from "next/link";
-import { dismissDeadlineAction } from "../actions";
-import { SubmitButton } from "@/components/submit-button";
-import { Card, DateText, Empty, Money, Num, PageHeader, SeverityBadge } from "@/components/ui";
-import { getProfile } from "@/lib/auth";
+import { Badge, Card, DateText, Empty, Money, Num, PageHeader } from "@/components/ui";
 import type { Severity } from "@/lib/deadlines/engine";
-import { todayInToronto } from "@/lib/format";
+import { formatCADShort, todayInToronto } from "@/lib/format";
 import { ruleLabel } from "@/lib/rules/ontario-construction-act";
 import { addCalendarDays, dayOfWeek, diffDays, isOntarioHoliday, makeDate } from "@/lib/rules/calendar";
 import { createClient } from "@/lib/supabase/server";
@@ -13,6 +10,20 @@ import type { Client, Deadline } from "@/lib/types";
 export const metadata = { title: "Deadlines" };
 
 const SEVERITIES: Severity[] = ["overdue", "critical", "warning", "info"];
+/** Short names for calendar cells, where the full title would truncate. */
+const TYPE_SHORT: Record<string, string> = {
+  invoice_payment: "Payment",
+  invoice_dispute_window: "Dispute window",
+  proper_invoice_objection: "Objection",
+  adjudication: "Adjudication",
+  holdback_annual_notice: "Holdback notice",
+  holdback_release: "Holdback",
+  holdback_lien_expiry: "Lien expiry",
+  holdback_notice_window: "Holdback notice",
+  wsib_expiry: "WSIB",
+};
+const HISTORY_LIMIT = 200;
+
 const CHIP: Record<Severity, string> = { overdue: "bg-danger-bg text-danger", critical: "bg-warn-bg text-warn", warning: "bg-warn-bg text-warn", info: "bg-emphasis text-body" };
 
 interface Search {
@@ -25,14 +36,17 @@ interface Search {
 export default async function DeadlinesPage({ searchParams }: { searchParams: Search }) {
   const supabase = createClient();
   const today = todayInToronto();
-  const { profile } = await getProfile();
-  const view = searchParams.view === "calendar" ? "calendar" : "list";
+  const view = searchParams.view === "history" ? "history" : "calendar";
   const severity = SEVERITIES.includes(searchParams.severity as Severity) ? (searchParams.severity as Severity) : null;
   const month = /^\d{4}-\d{2}$/.test(searchParams.month ?? "") ? (searchParams.month as string) : today.slice(0, 7);
 
-  let query = supabase.from("deadlines").select("*").eq("resolved", false).order("due_date");
+  const base = supabase.from("deadlines").select("*");
+  let query =
+    view === "history"
+      ? base.eq("resolved", true).order("resolved_at", { ascending: false }).limit(HISTORY_LIMIT)
+      : base.eq("resolved", false).order("due_date");
   if (searchParams.client) query = query.eq("client_id", searchParams.client);
-  if (severity) query = query.eq("severity", severity);
+  if (severity && view === "calendar") query = query.eq("severity", severity);
   const [{ data: deadlines }, { data: clients }] = await Promise.all([
     query.returns<Deadline[]>(),
     supabase.from("clients").select("id, name").order("name").returns<Client[]>(),
@@ -53,17 +67,21 @@ export default async function DeadlinesPage({ searchParams }: { searchParams: Se
     <>
       <PageHeader
         title="Deadlines"
-        description="Generated each morning from the rules table. Dismiss an item you have handled outside the app; it will not come back."
+        description={
+          view === "history"
+            ? "Deadlines that are closed: dismissed by an admin, or cleared by the sweep once the invoice was paid, the holdback released or the certificate renewed."
+            : "Generated each morning from the rules table. Act on them from Today."
+        }
         actions={
           <div className="flex rounded-button border border-line-strong p-0.5">
-            {(["list", "calendar"] as const).map((v) => (
+            {(["calendar", "history"] as const).map((v) => (
               <Link key={v} href={href({ view: v })} className={`rounded-[6px] px-3 py-1 text-sm capitalize ${view === v ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}>{v}</Link>
             ))}
           </div>
         }
       />
 
-      <form key={`${searchParams.client ?? ""}-${severity ?? ""}`} className="mb-5 flex flex-wrap items-end gap-3" action="/deadlines">
+      <form key={`${view}-${searchParams.client ?? ""}-${severity ?? ""}`} className="mb-5 flex flex-wrap items-end gap-3" action="/deadlines">
         <input type="hidden" name="view" value={view} />
         <input type="hidden" name="month" value={month} />
         <label className="block w-56">
@@ -73,48 +91,50 @@ export default async function DeadlinesPage({ searchParams }: { searchParams: Se
             {(clients ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </label>
-        <label className="block w-44">
-          <span className="label mb-1.5 block">Severity</span>
-          <select name="severity" defaultValue={severity ?? ""} className="input">
-            <option value="">All</option>
-            {SEVERITIES.map((s) => <option key={s} value={s} className="capitalize">{s}</option>)}
-          </select>
-        </label>
+        {view === "calendar" ? (
+          <label className="block w-44">
+            <span className="label mb-1.5 block">Severity</span>
+            <select name="severity" defaultValue={severity ?? ""} className="input">
+              <option value="">All</option>
+              {SEVERITIES.map((s) => <option key={s} value={s} className="capitalize">{s}</option>)}
+            </select>
+          </label>
+        ) : null}
         <button className="btn-secondary">Apply</button>
         {searchParams.client || severity ? <Link href={`/deadlines?view=${view}`} className="pb-2 text-sm text-muted hover:text-fg">Clear</Link> : null}
-        <span className="ml-auto pb-2 text-xs text-muted"><Num>{list.length}</Num> open</span>
+        <span className="ml-auto pb-2 text-xs text-muted">
+          {view === "history" ? (
+            <>
+              <Num>{list.length}</Num> closed{list.length === HISTORY_LIMIT ? `, latest ${HISTORY_LIMIT} shown` : ""}
+            </>
+          ) : (
+            <>
+              <Num>{list.length}</Num> open
+            </>
+          )}
+        </span>
       </form>
 
-      {view === "list" ? (
+      {view === "history" ? (
         <Card flush>
           {list.length === 0 ? (
-            <Empty>No open deadlines match these filters.</Empty>
+            <Empty>No closed deadlines yet. Dismissed and cleared items appear here.</Empty>
           ) : (
             <div className="overflow-x-auto">
               <table className="table">
-                <thead><tr><th>Due</th><th>Deadline</th><th>Client</th><th>Type</th><th className="text-right">Amount</th><th>Severity</th>{profile?.role === "admin" ? <th /> : null}</tr></thead>
+                <thead><tr><th>Closed</th><th>Deadline</th><th>Client</th><th>Type</th><th className="text-right">Amount</th><th>Was due</th><th>Outcome</th></tr></thead>
                 <tbody>
-                  {list.map((d) => {
-                    const days = diffDays(today, d.due_date);
-                    return (
-                      <tr key={d.id}>
-                        <td className="whitespace-nowrap"><DateText value={d.due_date} /><div className="num text-xs text-faint">{days < 0 ? `${-days}d ago` : days === 0 ? "today" : `in ${days}d`}</div></td>
-                        <td>{d.project_id ? <Link href={`/projects/${d.project_id}`} className="hover:text-accent">{d.title}</Link> : <Link href={`/clients/${d.client_id}`} className="hover:text-accent">{d.title}</Link>}</td>
-                        <td className="max-w-[180px] truncate text-muted" title={clientName.get(d.client_id)}>{clientName.get(d.client_id)}</td>
-                        <td className="whitespace-nowrap text-xs text-muted">{ruleLabel(d.rule_id)}</td>
-                        <td className="text-right">{d.amount ? <Money value={Number(d.amount)} /> : <span className="text-faint">—</span>}</td>
-                        <td><SeverityBadge severity={d.severity} /></td>
-                        {profile?.role === "admin" ? (
-                          <td>
-                            <form action={dismissDeadlineAction}>
-                              <input type="hidden" name="id" value={d.id} />
-                              <SubmitButton className="btn-secondary btn-sm" pending="…" confirm="Dismiss this deadline? It will not be regenerated by future sweeps.">Dismiss</SubmitButton>
-                            </form>
-                          </td>
-                        ) : null}
-                      </tr>
-                    );
-                  })}
+                  {list.map((d) => (
+                    <tr key={d.id}>
+                      <td className="whitespace-nowrap"><DateText value={(d.dismissed_at ?? d.resolved_at)?.slice(0, 10)} /></td>
+                      <td>{d.project_id ? <Link href={`/projects/${d.project_id}`} className="hover:underline hover:underline-offset-4">{d.title}</Link> : <Link href={`/clients/${d.client_id}`} className="hover:underline hover:underline-offset-4">{d.title}</Link>}</td>
+                      <td className="max-w-[180px] truncate text-muted" title={clientName.get(d.client_id)}>{clientName.get(d.client_id)}</td>
+                      <td className="whitespace-nowrap text-xs text-muted">{ruleLabel(d.rule_id)}</td>
+                      <td className="text-right">{d.amount ? <Money value={Number(d.amount)} /> : <span className="text-faint">—</span>}</td>
+                      <td className="whitespace-nowrap"><DateText value={d.due_date} /></td>
+                      <td>{d.dismissed ? <Badge tone="neutral">Dismissed</Badge> : <Badge tone="ok">Cleared</Badge>}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -151,7 +171,7 @@ export default async function DeadlinesPage({ searchParams }: { searchParams: Se
                 })}
               </ol>
             )}
-            <p className="mt-2 text-[13px] text-muted">Dismissed items stay dismissed.</p>
+            <p className="mt-2 text-[13px] text-muted">Dismissed items stay dismissed and are listed in History.</p>
           </section>
         </div>
       )}
@@ -184,7 +204,7 @@ function CalendarView({ month, today, deadlines, href }: { month: string; today:
       }
     >
       {overdue.length > 0 ? (
-        <div className="border-b border-line bg-danger-bg px-4 py-2 text-[13px] text-danger"><Num>{overdue.length}</Num> overdue items fall before this view. Switch to list to see them.</div>
+        <div className="border-b border-line bg-danger-bg px-4 py-2 text-[13px] text-danger"><Num>{overdue.length}</Num> past-due {overdue.length === 1 ? "item falls" : "items fall"} before this view. <Link href="/dashboard" className="underline underline-offset-4">See them on Today</Link>.</div>
       ) : null}
       <div className="grid grid-cols-7 border-b border-line">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => <div key={d} className="label bg-raised px-2 py-2">{d}</div>)}
@@ -203,8 +223,9 @@ function CalendarView({ month, today, deadlines, href }: { month: string; today:
               <ul className="mt-1 space-y-0.5">
                 {items.slice(0, 3).map((d) => (
                   <li key={d.id}>
-                    <Link href={d.project_id ? `/projects/${d.project_id}` : `/clients/${d.client_id}`} className={`block truncate rounded-badge px-1.5 py-0.5 text-xs font-medium hover:underline ${CHIP[d.severity]}`} title={d.title}>
-                      {d.title}
+                    <Link href={d.project_id ? `/projects/${d.project_id}` : `/clients/${d.client_id}`} className={`flex flex-wrap justify-between gap-x-1 rounded-badge px-1.5 py-0.5 text-xs font-medium hover:underline ${CHIP[d.severity]}`} title={d.title}>
+                      <span className="min-w-0 truncate">{TYPE_SHORT[d.type] ?? d.title}</span>
+                      {d.amount ? <span className="num shrink-0">{formatCADShort(Number(d.amount))}</span> : null}
                     </Link>
                   </li>
                 ))}

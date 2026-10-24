@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCAD, formatDate, todayInToronto } from "@/lib/format";
+import { formatCAD, formatCADShort, formatDate, todayInToronto } from "@/lib/format";
 
 describe("formatting", () => {
   it("formats CAD in en-CA", () => {
@@ -17,5 +17,15 @@ describe("formatting", () => {
   it("derives today in Toronto, not UTC", () => {
     expect(todayInToronto(new Date("2026-10-23T02:30:00Z"))).toBe("2026-10-22");
     expect(todayInToronto(new Date("2026-10-23T05:30:00Z"))).toBe("2026-10-23");
+  });
+});
+
+describe("formatCADShort", () => {
+  it("uses compact notation without trailing zeros", () => {
+    expect(formatCADShort(950)).toBe("$950");
+    expect(formatCADShort(45000)).toBe("$45K");
+    expect(formatCADShort(12345)).toBe("$12.3K");
+    expect(formatCADShort(1234567)).toBe("$1.2M");
+    expect(formatCADShort(null)).toBe("—");
   });
 });

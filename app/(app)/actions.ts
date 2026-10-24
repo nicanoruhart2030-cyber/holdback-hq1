@@ -283,6 +283,40 @@ export async function dismissDeadlineAction(fd: FormData) {
   setFlash(`Dismissed: ${data?.title ?? "deadline"}. It will not come back.`);
 }
 
+/**
+ * The payer referred the disputed invoice to adjudication itself, so the
+ * referral window is closed: note it on the invoice and dismiss the deadline.
+ */
+export async function recordAdjudicationReferralAction(fd: FormData) {
+  const admin = await requireAdmin();
+  const id = z.string().uuid().parse(fd.get("id"));
+  const supabase = createClient();
+  const { data: deadline } = await supabase
+    .from("deadlines")
+    .select("type, entity_id, client_id, dedupe_key")
+    .eq("id", id)
+    .single<{ type: string; entity_id: string; client_id: string; dedupe_key: string }>();
+  if (!deadline || deadline.type !== "adjudication") throw new Error("Not an adjudication deadline");
+  const { data: inv } = await supabase.from("invoices").select("number, notes").eq("id", deadline.entity_id).single<{ number: string; notes: string | null }>();
+  if (!inv) throw new Error("Invoice not found");
+
+  const today = todayInToronto();
+  const line = `Payer referred the dispute to adjudication (recorded ${today}).`;
+  const { error: invError } = await supabase
+    .from("invoices")
+    .update({ notes: inv.notes ? `${inv.notes}\n${line}` : line })
+    .eq("id", deadline.entity_id);
+  fail(invError, "Update invoice notes");
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("deadlines")
+    .update({ resolved: true, resolved_at: now, dismissed: true, dismissed_by: admin.id, dismissed_at: now })
+    .eq("id", id);
+  fail(error, "Close adjudication deadline");
+  await logActivity(supabase, { actorId: admin.id, actorType: "user", action: "invoice.adjudication_referred", entityType: "invoice", entityId: deadline.entity_id, clientId: deadline.client_id, details: { deadline_id: id, dedupe_key: deadline.dedupe_key } });
+  setFlash(`Recorded: payer referred ${inv.number} to adjudication`);
+}
+
 export async function runSweepNowAction() {
   const admin = await requireAdmin();
   const r = await runDailySweep(createAdminClient(), todayInToronto(), admin.id);

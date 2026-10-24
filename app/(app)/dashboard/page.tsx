@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { dismissDeadlineAction, runSweepNowAction } from "../actions";
+import { dismissDeadlineAction, recordAdjudicationReferralAction, runSweepNowAction } from "../actions";
 import { SubmitButton } from "@/components/submit-button";
 import { AgingBar, Badge, type BadgeTone, DateText, Money, Num, PageHeader, SectionTitle, Stat, StatStrip } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
@@ -55,6 +55,8 @@ export default async function DashboardPage() {
   const projectName = new Map(proj.map((p) => [p.id, p.name]));
   const draftFor = new Map((drafts.data ?? []).filter((d) => d.deadline_id).map((d) => [d.deadline_id as string, d.id]));
   const items = deadlines.data ?? [];
+  const pastDue = items.filter((d) => d.due_date < today);
+  const upcoming = items.filter((d) => d.due_date >= today);
   const pendingDrafts = drafts.data?.length ?? 0;
   const outstanding = aging.reduce((s, b) => s + b.amount, 0);
 
@@ -95,8 +97,16 @@ export default async function DashboardPage() {
         <Stat
           label="Overdue invoices"
           value={<Money value={m.overdueTotal} whole />}
-          hint={m.overdueCount > 0 ? <Badge tone="danger">{m.overdueCount} past the payment window</Badge> : "None"}
-          href="/deadlines"
+          hint={
+            m.overdueCount > 0 ? (
+              <Badge tone="danger">
+                {m.overdueCount} {m.overdueCount === 1 ? "invoice" : "invoices"} past the payment window
+              </Badge>
+            ) : (
+              "None"
+            )
+          }
+          href={pastDue.length > 0 ? "#past-due" : undefined}
         />
         <Stat
           label="Disputed"
@@ -152,61 +162,35 @@ export default async function DashboardPage() {
           {items.length === 0 ? (
             <div className="rounded-card border border-dashed border-line-strong px-6 py-10 text-center">
               <div className="text-base font-semibold text-fg">Nothing needs action</div>
-              <p className="mx-auto mt-1 max-w-sm text-muted">Nothing is overdue or due in the next 14 days.</p>
+              <p className="mx-auto mt-1 max-w-sm text-muted">Nothing is past due or due in the next 14 days.</p>
             </div>
           ) : (
-            <ul className="divide-y divide-line rounded-md border border-line">
-              {items.map((d) => {
-                const days = diffDays(today, d.due_date);
-                const draftId = draftFor.get(d.id);
-                const target = d.project_id ? `/projects/${d.project_id}` : `/clients/${d.client_id}`;
-                return (
-                  <li key={d.id} className="flex flex-col gap-2 px-4 py-3 lg:flex-row lg:items-center lg:gap-4">
-                    <div className="lg:w-36">
-                      <Badge tone={TONE[d.severity]}>{whenLabel(days)}</Badge>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <Link href={target} className="block truncate font-medium text-fg hover:underline hover:underline-offset-4">
-                        {d.title}
-                      </Link>
-                      <div className="truncate text-[13px] text-muted">
-                        {clientName.get(d.client_id)}
-                        {d.project_id ? ` · ${projectName.get(d.project_id) ?? ""}` : ""} · {ruleLabel(d.rule_id)}
-                      </div>
-                    </div>
-                    <div className="lg:w-28 lg:text-right">
-                      {d.amount ? <Money value={Number(d.amount)} className="font-medium text-fg" /> : <span className="text-muted">—</span>}
-                      <div className="text-xs text-muted">
-                        due <DateText value={d.due_date} />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 lg:w-48 lg:justify-end">
-                      {draftId ? (
-                        <Link href={`/drafts?id=${draftId}`} className="btn-secondary btn-sm">
-                          Review email
-                        </Link>
-                      ) : d.entity_type === "invoice" && d.project_id ? (
-                        <Link href={`/projects/${d.project_id}?edit=${d.entity_id}#invoices`} className="btn-secondary btn-sm">
-                          Update invoice
-                        </Link>
-                      ) : (
-                        <Link href={target} className="btn-secondary btn-sm">
-                          Open
-                        </Link>
-                      )}
-                      {isAdmin ? (
-                        <form action={dismissDeadlineAction}>
-                          <input type="hidden" name="id" value={d.id} />
-                          <SubmitButton className="btn-ghost btn-sm" pending="…" confirm="Dismiss this item? It will not come back in future sweeps.">
-                            Dismiss
-                          </SubmitButton>
-                        </form>
-                      ) : null}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="space-y-5">
+              {[
+                { key: "past-due", title: "Past due", rows: pastDue },
+                { key: "upcoming", title: `Due in the next ${UPCOMING_WINDOW_DAYS} days`, rows: upcoming },
+              ]
+                .filter((g) => g.rows.length > 0)
+                .map((g) => (
+                  <div key={g.key}>
+                    <h3 id={g.key} className="label mb-1.5">
+                      {g.title} · <Num>{g.rows.length}</Num>
+                    </h3>
+                    <ul aria-labelledby={g.key} className="divide-y divide-line rounded-md border border-line">
+                      {g.rows.map((d) => (
+                        <InboxRow
+                          key={d.id}
+                          d={d}
+                          today={today}
+                          isAdmin={isAdmin}
+                          draftId={draftFor.get(d.id)}
+                          context={`${clientName.get(d.client_id) ?? ""}${d.project_id ? ` · ${projectName.get(d.project_id) ?? ""}` : ""} · ${ruleLabel(d.rule_id)}`}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+            </div>
           )}
         </section>
 
@@ -276,5 +260,69 @@ export default async function DashboardPage() {
 
       <p className="mt-8 text-xs text-muted">Deadlines use unverified Construction Act defaults pending legal review. An administrative tool, not legal advice.</p>
     </>
+  );
+}
+
+function InboxRow({ d, today, isAdmin, draftId, context }: { d: Deadline; today: string; isAdmin: boolean; draftId?: string; context: string }) {
+  const days = diffDays(today, d.due_date);
+  const target = d.project_id ? `/projects/${d.project_id}` : `/clients/${d.client_id}`;
+  const invoiceEditor = d.entity_type === "invoice" && d.project_id ? `/projects/${d.project_id}?edit=${d.entity_id}#invoices` : null;
+  const isAdjudication = d.type === "adjudication";
+  return (
+    <li className="flex flex-col gap-2 px-4 py-3 lg:flex-row lg:items-center lg:gap-4">
+      <div className="lg:w-36">
+        <Badge tone={TONE[d.severity]}>{whenLabel(days)}</Badge>
+      </div>
+      <div className="min-w-0 flex-1">
+        <Link href={target} className="block truncate font-medium text-fg hover:underline hover:underline-offset-4">
+          {d.title}
+        </Link>
+        <div className="truncate text-[13px] text-muted">{context}</div>
+      </div>
+      <div className="lg:w-28 lg:text-right">
+        {d.amount ? <Money value={Number(d.amount)} className="font-medium text-fg" /> : <span className="text-muted">—</span>}
+        <div className="text-xs text-muted">
+          due <DateText value={d.due_date} />
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-1 lg:w-60 lg:justify-end">
+        {draftId ? (
+          <Link href={`/drafts?id=${draftId}`} className="btn-secondary btn-sm">
+            Review email
+          </Link>
+        ) : isAdjudication && invoiceEditor ? (
+          <Link href={invoiceEditor} className="btn-secondary btn-sm">
+            Review dispute
+          </Link>
+        ) : invoiceEditor ? (
+          <Link href={invoiceEditor} className="btn-secondary btn-sm">
+            Update invoice
+          </Link>
+        ) : (
+          <Link href={target} className="btn-secondary btn-sm">
+            Open
+          </Link>
+        )}
+        {isAdmin && isAdjudication ? (
+          <form action={recordAdjudicationReferralAction}>
+            <input type="hidden" name="id" value={d.id} />
+            <SubmitButton
+              className="btn-ghost btn-sm"
+              pending="…"
+              confirm="Record that the payer referred this dispute to adjudication? The referral window closes and a note is added to the invoice."
+            >
+              Payer referred it
+            </SubmitButton>
+          </form>
+        ) : isAdmin ? (
+          <form action={dismissDeadlineAction}>
+            <input type="hidden" name="id" value={d.id} />
+            <SubmitButton className="btn-ghost btn-sm" pending="…" confirm="Dismiss this item? It will not come back in future sweeps.">
+              Dismiss
+            </SubmitButton>
+          </form>
+        ) : null}
+      </div>
+    </li>
   );
 }

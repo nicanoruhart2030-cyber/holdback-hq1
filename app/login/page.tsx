@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Notice } from "@/components/ui";
 import { Wordmark } from "@/components/wordmark";
 import { LoginForm } from "./login-form";
 
@@ -23,7 +24,11 @@ export default function LoginPage({ searchParams }: { searchParams: { error?: st
         <div className="card p-7">
           <h1 className="h-display text-display">Sign in</h1>
           <p className="mt-1 text-sm text-muted">We will email you a one-time sign-in link.</p>
-          {error ? <p className="mt-4 border-l-2 border-danger pl-3 text-sm text-danger">{error}</p> : null}
+          {error ? (
+            <div className="mt-4">
+              <Notice tone="danger">{error}</Notice>
+            </div>
+          ) : null}
           <LoginForm />
         </div>
         <p className="mt-6 text-xs text-faint">

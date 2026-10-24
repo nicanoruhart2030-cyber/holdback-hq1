@@ -89,6 +89,9 @@ export interface Deadline {
   title: string;
   amount: number | null;
   resolved: boolean;
+  resolved_at: string | null;
+  dismissed: boolean;
+  dismissed_at: string | null;
 }
 
 export interface Draft {

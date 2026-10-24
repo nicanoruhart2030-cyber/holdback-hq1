@@ -7,6 +7,20 @@ const cadCompact = new Intl.NumberFormat("en-CA", {
   maximumFractionDigits: 0,
 });
 
+const cadShort = new Intl.NumberFormat("en-CA", {
+  style: "currency",
+  currency: "CAD",
+  notation: "compact",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 1,
+});
+
+/** "$12K", "$1.2M": for tight spaces such as calendar cells, never for tables. */
+export function formatCADShort(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  return cadShort.format(value);
+}
+
 export function formatCAD(value: number | null | undefined, opts: { whole?: boolean } = {}): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
   return (opts.whole ? cadCompact : cad).format(value);
