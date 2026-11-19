@@ -168,7 +168,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* Poster headline across the full width */
 .hero-title {
   font-family: var(--display); font-weight: 400;
-  font-size: clamp(84px, 13vw, 198px); line-height: .9; letter-spacing: 0;
+  font-size: clamp(96px, 18.6vw, 284px); line-height: .88; letter-spacing: 0;
   text-transform: uppercase; text-wrap: balance;
   position: relative; padding-bottom: 40px;
 }
@@ -176,8 +176,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
   margin-top: 48px;
   display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(40px, 6vw, 96px); align-items: start;
 }
+/* Punchline under the name: the display face, quieter than the name */
+.hero-punch {
+  font-family: var(--display); font-weight: 400; text-transform: uppercase;
+  font-size: clamp(40px, 4.4vw, 64px); line-height: .95; letter-spacing: .01em; color: var(--bone);
+}
 .hero-sub {
-  margin-top: 0; max-width: 26ch;
+  margin-top: 20px; max-width: 30ch;
   font-size: var(--fs-lead); line-height: 1.42; color: var(--bone);
 }
 .hero-actions { margin-top: 36px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
