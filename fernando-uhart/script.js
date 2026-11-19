@@ -2,9 +2,9 @@
 
 // ---- Contact settings: fill these in -------------------------------------
 // WhatsApp number in international format, digits only (e.g. "5492231234567").
-const WHATSAPP_NUMBER = "";
+const WHATSAPP_NUMBER = "13657398284"; // +1 365 739 8284 (Canada)
 // Full Instagram profile URL (e.g. "https://instagram.com/yourhandle").
-const INSTAGRAM_URL = "";
+const INSTAGRAM_URL = "https://instagram.com/fernandouhart";
 // --------------------------------------------------------------------------
 
 (() => {
@@ -129,8 +129,8 @@ const INSTAGRAM_URL = "";
   [wa, ig].forEach((a) => { if (a.getAttribute("href") === "#book") a.removeAttribute("target"); });
 
   // ---- Booking form ----
-  // Without a backend, the request opens WhatsApp with everything pre-filled.
-  // To receive it by email instead, point the form at a service like Formspree.
+  // No backend: the form writes the WhatsApp message, and the visitor sends it
+  // with one tap. To receive requests by email instead, use a service like Formspree.
   const form = $("[data-form]");
   const err = $("[data-error]");
   const dateInput = $("#f-date");
@@ -164,11 +164,11 @@ const INSTAGRAM_URL = "";
       data.message ? `• Details: ${data.message}` : null,
     ].filter(Boolean).join("\n");
 
-    if (WHATSAPP_NUMBER) { try { window.open(waLink(msg), "_blank", "noopener"); } catch (_) {} }
-
+    const first = data.name.trim().split(" ")[0];
     $(".form-body", form).hidden = true;
     $("[data-done]").hidden = false;
-    $("[data-done-text]").textContent = `Thanks, ${data.name.split(" ")[0]}. I'll get back to you about ${when}.`;
+    $("[data-send]").href = waLink(msg);
+    $("[data-done-text]").textContent = `Almost there, ${first}. Tap below and your message about ${when} goes straight to my WhatsApp.`;
   });
   form.addEventListener("input", (e) => {
     if (e.target.classList.contains("is-invalid") && e.target.value.trim()) e.target.classList.remove("is-invalid");

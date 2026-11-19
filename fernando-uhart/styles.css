@@ -459,6 +459,8 @@ section { position: relative; }
 .book-lede { margin-top: 24px; max-width: 34ch; font-size: 18px; color: var(--gray); }
 .social { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 12px; }
 .social .ic { font-size: 19px; }
+.contact-line { margin-top: 20px; font-size: 14px; color: var(--gray); }
+.form-done .btn { margin-top: 16px; }
 
 .form { padding: 36px; border-radius: var(--r-card); background: var(--card); }
 .form-body { display: grid; gap: 20px; }
