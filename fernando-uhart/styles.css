@@ -524,7 +524,7 @@ section { position: relative; }
 .feature-type {
   position: absolute; right: 44px; top: 50%; transform: translateY(-50%);
   font-family: var(--display); font-weight: 400;
-  font-size: clamp(120px, 15vw, 220px); line-height: .82; letter-spacing: -.02em; text-transform: uppercase; text-align: right;
+  font-size: clamp(84px, 9.4vw, 132px); line-height: .84; letter-spacing: -.01em; text-transform: uppercase; text-align: right;
   color: transparent; -webkit-text-stroke: 1.5px rgba(242,238,230,.22);
 }
 
