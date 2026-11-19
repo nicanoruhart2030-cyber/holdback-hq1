@@ -472,6 +472,27 @@ section { position: relative; }
   .progress:hover span { height: 8px; margin-top: -4px; }
 }
 
+
+/* ---------- Photos: youngest to now ---------- */
+.photos { padding: 32px 0 112px; }
+.photo-row {
+  max-width: var(--wrap); margin: 56px auto 0; padding: 0 var(--gutter);
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px;
+}
+.photo img {
+  display: block; width: 100%; height: auto; aspect-ratio: 4 / 5;
+  object-fit: cover; object-position: var(--pos, 50% 30%);
+  border-radius: var(--r-card); background: var(--card);
+}
+.photo p { margin-top: 14px; display: flex; align-items: baseline; gap: 10px; font-size: var(--fs-meta); color: var(--bone); }
+.photo p span { font-size: var(--fs-label); font-weight: 600; letter-spacing: .12em; color: var(--gray); font-variant-numeric: tabular-nums; }
+.photo:last-child img { outline: 1px solid var(--hair-2); outline-offset: 4px; } /* today, set apart */
+@media (max-width: 980px) {
+  .photo-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .photo:last-child { grid-column: 1 / -1; }
+  .photo:last-child img { aspect-ratio: 4 / 3; }
+}
+
 /* ---------- Music ---------- */
 .music { padding: 112px 0 128px; }
 .setlist { max-width: var(--wrap); margin: 64px auto 0; padding: 0 var(--gutter); }
