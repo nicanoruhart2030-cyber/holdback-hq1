@@ -143,6 +143,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   background: rgba(242, 238, 230, 0.022);
   clip-path: polygon(48% 0, 52% 0, 82% 100%, 18% 100%);
   transform-origin: 50% 0;
+  will-change: transform;
 }
 .beam-a { left: 4%; animation: sway 14s ease-in-out infinite; }
 .beam-b { left: 38%; animation: sway 17s ease-in-out infinite reverse; }
@@ -211,6 +212,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   box-shadow: 0 0 0 1px var(--hair);
   display: grid; place-items: center;
   animation: spin 3.2s linear infinite;
+  will-change: transform;
 }
 .vinyl-b { animation-duration: 3.6s; }
 .vinyl .label { width: 36%; aspect-ratio: 1; border-radius: 50%; background: var(--red); position: relative; }
@@ -233,14 +235,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
   display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 12px 8px; align-content: end;
 }
 .mixer span {
-  height: 56px; border-radius: 3px;
-  background: linear-gradient(to top, var(--bone) 50%, var(--card) 50%) bottom / 100% 200% no-repeat;
+  position: relative; overflow: hidden;
+  height: 56px; border-radius: 3px; background: var(--card);
+}
+.mixer span::before { /* the level: a full-height bar scaled from the bottom, composited */
+  content: ""; position: absolute; inset: 0; background: var(--bone);
+  transform-origin: bottom; transform: scaleY(.5);
   animation: level 1.2s ease-in-out infinite alternate;
 }
-.mixer span:nth-child(2) { animation-delay: -.3s; }
-.mixer span:nth-child(3) { animation-delay: -.7s; }
-.mixer span:nth-child(4) { animation-delay: -.5s; }
-@keyframes level { from { background-position: 0 0; } to { background-position: 0 70%; } }
+.mixer span:nth-child(2)::before { animation-delay: -.3s; }
+.mixer span:nth-child(3)::before { animation-delay: -.7s; }
+.mixer span:nth-child(4)::before { animation-delay: -.5s; }
+@keyframes level { from { transform: scaleY(.5); } to { transform: scaleY(.15); } }
 
 /* Satellite chip, straddling the card's left edge */
 .award-chip {
@@ -393,12 +399,13 @@ section { position: relative; }
 .tv-eq { position: absolute; left: 18%; right: 18%; bottom: 22px; height: 76px; display: flex; align-items: flex-end; gap: 6px; }
 .tv-eq i, .stream-wave i {
   flex: 1; border-radius: 2px; background: var(--bone);
-  height: 30%; animation: eq 1s ease-in-out infinite alternate;
+  height: 100%; transform-origin: bottom; transform: scaleY(.3);
+  animation: eq 1s ease-in-out infinite alternate;
 }
 .tv-eq i:nth-child(odd), .stream-wave i:nth-child(odd) { animation-duration: .8s; }
 .tv-eq i:nth-child(3n), .stream-wave i:nth-child(3n) { animation-duration: 1.3s; animation-delay: -.4s; }
 .tv-eq i:nth-child(4n+1), .stream-wave i:nth-child(4n+1) { animation-delay: -.7s; }
-@keyframes eq { from { height: 18%; } to { height: 100%; } }
+@keyframes eq { from { transform: scaleY(.18); } to { transform: scaleY(1); } }
 
 /* Award: flat, bone trophy */
 .award-big {
@@ -583,6 +590,10 @@ section { position: relative; }
 .footer-copy { margin-left: auto; }
 
 
+/* Decorative loops stop while their section is off screen */
+.is-offscreen .beam, .is-offscreen .vinyl, .is-offscreen .mixer span::before,
+.is-offscreen .tv-eq i, .is-offscreen .stream-wave i, .is-offscreen .venues-track { animation-play-state: paused; }
+
 /* ---------- Skip link ---------- */
 .skip {
   position: fixed; left: 16px; top: 12px; z-index: 100;
@@ -610,7 +621,7 @@ main:focus { outline: none; }
 
 /* ---------- Venue strip: a flyer's line-up, moving slowly ---------- */
 .venues { position: relative; overflow: hidden; border-top: 1px solid var(--hair); }
-.venues-track { display: flex; width: max-content; animation: marquee 48s linear infinite; }
+.venues-track { display: flex; width: max-content; animation: marquee 48s linear infinite; will-change: transform; }
 .venues-list { display: flex; flex-shrink: 0; align-items: center; padding: 22px 0; }
 .venues-list li {
   display: flex; align-items: center;
@@ -707,7 +718,7 @@ main:focus { outline: none; }
 
 /* Reduced motion: keep fades, drop movement */
 @media (prefers-reduced-motion: reduce) {
-  .beam, .vinyl, .mixer span, .tv-eq i, .stream-wave i, .brand-disc, .venues-track, .hero-title::after { animation: none !important; }
+  .beam, .vinyl, .mixer span::before, .tv-eq i, .stream-wave i, .brand-disc, .venues-track, .hero-title::after { animation: none !important; }
   .h-in, .h-card, .h-card .award-chip { animation: h-fade 300ms ease both !important; }
   .venues-track { display: block; width: auto; }
   .venues-list { flex-wrap: wrap; flex-shrink: 1; row-gap: 14px; padding-inline: var(--gutter); }

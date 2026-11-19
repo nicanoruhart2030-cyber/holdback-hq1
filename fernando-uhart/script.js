@@ -22,6 +22,12 @@ const INSTAGRAM_URL = "https://instagram.com/fernandouhart";
     else photo.addEventListener("error", noPhoto);
   }
 
+  // Pause decorative loops in sections that are off screen
+  const offIO = new IntersectionObserver((entries) => {
+    entries.forEach((e) => e.target.classList.toggle("is-offscreen", !e.isIntersecting));
+  }, { rootMargin: "100px 0px" });
+  $$(".hero, .venues, .journey, .book").forEach((el) => offIO.observe(el));
+
   // Nav background once the page scrolls
   const nav = $("[data-nav]");
   const onScroll = () => nav.classList.toggle("is-scrolled", scrollY > 24);
