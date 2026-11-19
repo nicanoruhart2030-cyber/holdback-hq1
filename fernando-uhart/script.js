@@ -14,6 +14,14 @@ const INSTAGRAM_URL = "";
 
   $("[data-year]").textContent = new Date().getFullYear();
 
+  // Photo fallback (also covers hosts that block inline onerror handlers)
+  const photo = $(".photo-frame img");
+  const noPhoto = () => { const f = $(".photo-frame"); if (f) f.classList.add("is-empty"); photo && photo.remove(); };
+  if (photo) {
+    if (photo.complete && !photo.naturalWidth) noPhoto();
+    else photo.addEventListener("error", noPhoto);
+  }
+
   // Nav background once the page scrolls
   const nav = $("[data-nav]");
   const onScroll = () => nav.classList.toggle("is-scrolled", scrollY > 24);
@@ -156,7 +164,7 @@ const INSTAGRAM_URL = "";
       data.message ? `• Details: ${data.message}` : null,
     ].filter(Boolean).join("\n");
 
-    if (WHATSAPP_NUMBER) window.open(waLink(msg), "_blank", "noopener");
+    if (WHATSAPP_NUMBER) { try { window.open(waLink(msg), "_blank", "noopener"); } catch (_) {} }
 
     $(".form-body", form).hidden = true;
     $("[data-done]").hidden = false;
