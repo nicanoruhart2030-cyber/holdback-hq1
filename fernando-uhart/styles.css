@@ -373,6 +373,7 @@ section { position: relative; }
   font-size: 140px; line-height: 1; letter-spacing: -.02em;
   color: transparent; -webkit-text-stroke: 1.5px rgba(242,238,230,.16);
 }
+.card:has(.tags)::before { display: none; } /* a card full of clubs has no room for its chapter number */
 .tags { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
 .tags li { padding: 7px 12px; border-radius: 999px; font-size: 13px; line-height: 1.2; border: 1px solid var(--hair-2); }
 
