@@ -56,8 +56,9 @@
       </div>
 
       <div class="hero-inner">
+        <h1 id="hero-title" class="hero-title reveal">Yo salí en los&nbsp;80.</h1>
+        <div class="hero-row">
         <div class="hero-copy">
-          <h1 id="hero-title" class="hero-title reveal">Yo salí en los&nbsp;80.</h1>
           <p class="hero-sub reveal">You did too. Let's bring that night back for your wedding, your 50th, your party.</p>
           <div class="hero-actions reveal">
             <a href="#book" class="btn btn-primary">Check my date</a>
@@ -83,6 +84,7 @@
             <span><strong>Best DJ of the Season</strong><small>Mar del Plata</small></span>
           </figcaption>
         </figure>
+        </div>
       </div>
     </section>
 
@@ -110,17 +112,18 @@
 
     <!-- 2. TIMELINE -->
     <section class="journey" id="journey" aria-labelledby="journey-title">
-      <div class="section-head">
-        <div>
-          <p class="kicker">The story</p>
-          <h2 id="journey-title" class="section-title">Forty years.<br>Same dance floor.</h2>
-        </div>
+      <div class="journey-grid">
+      <header class="journey-side">
+        <p class="kicker">The story</p>
+        <h2 id="journey-title" class="section-title">Forty years.<br>Same dance floor.</h2>
+        <p class="journey-intro">Eleven chapters, from a teenager playing weddings to private parties today.</p>
         <div class="journey-controls">
-          <p class="hint">Drag to scroll</p>
           <button class="round-btn" data-prev aria-label="Previous chapter"><svg class="ic"><use href="#i-left"/></svg></button>
           <button class="round-btn" data-next aria-label="Next chapter"><svg class="ic"><use href="#i-right"/></svg></button>
+          <p class="hint">Drag to scroll</p>
         </div>
-      </div>
+        <div class="progress" aria-hidden="true"><span data-progress></span></div>
+      </header>
 
       <div class="track-wrap">
         <ol class="track" data-track tabindex="0" aria-label="Career timeline">
@@ -243,7 +246,7 @@
 
         </ol>
       </div>
-      <div class="progress" aria-hidden="true"><span data-progress></span></div>
+      </div>
     </section>
 
     <!-- 4. WHAT I PLAY -->
@@ -253,23 +256,23 @@
         <h2 id="music-title" class="section-title">80s, 90s and today's hits.</h2>
         <p class="section-sub">Mixed for every crowd.</p>
       </div>
-      <div class="decades">
-        <article class="decade decade-accent reveal">
+      <ol class="setlist">
+        <li class="set-row set-accent reveal">
           <span class="decade-num">80s</span>
           <h3>The ones you danced to</h3>
           <p>Synths, new wave, disco, rock en español. Every summer on the coast.</p>
-        </article>
-        <article class="decade reveal">
+        </li>
+        <li class="set-row reveal">
           <span class="decade-num">90s</span>
           <h3>The ones you sang</h3>
           <p>Dance, pop and rock, in Spanish and English. Hands up, everybody singing.</p>
-        </article>
-        <article class="decade reveal">
+        </li>
+        <li class="set-row reveal">
           <span class="decade-num">Now</span>
           <h3>The ones your kids ask for</h3>
           <p>Today's hits too, mixed in at the right moment. Nobody sits down.</p>
-        </article>
-      </div>
+        </li>
+      </ol>
       <p class="music-note reveal">Every party, I watch the floor. Who's there, what they love, and when it's time for the temazos.</p>
     </section>
 
@@ -285,6 +288,7 @@
           <h3>80s &amp; 90s nights</h3>
           <p>The Yo salí en los 80 format, built for your crowd. La previa, the classics, and one more song after the last one.</p>
           <a href="#book" class="text-link">Plan your night <svg class="ic"><use href="#i-arrow"/></svg></a>
+          <span class="feature-type" aria-hidden="true">80s<br>90s</span>
         </article>
         <article class="service reveal">
           <span class="service-icon"><svg class="ic"><use href="#i-rings"/></svg></span>
@@ -312,7 +316,7 @@
     <!-- 6. BOOKING -->
     <section class="book" id="book" aria-labelledby="book-title">
       <div class="lights lights-low" aria-hidden="true"><span class="beam beam-a"></span><span class="beam beam-c"></span></div>
-      <div class="book-inner">
+      <div class="book-panel">
         <div class="book-copy">
           <p class="kicker">Booking</p>
           <h2 id="book-title" class="section-title">Tell me about<br>your night.</h2>
