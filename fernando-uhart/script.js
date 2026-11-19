@@ -34,7 +34,8 @@ const INSTAGRAM_URL = "https://instagram.com/fernandouhart";
       if (!e.isIntersecting) return;
       const siblings = $$(".reveal", e.target.parentElement);
       const i = Math.max(0, siblings.indexOf(e.target));
-      e.target.style.transitionDelay = `${Math.min(i, 5) * 80}ms`;
+      const steps = [0, 90, 160, 210, 250, 280]; // shrinking gaps read as a wave, not a queue
+      e.target.style.transitionDelay = `${steps[Math.min(i, steps.length - 1)]}ms`;
       e.target.classList.add("is-in");
       io.unobserve(e.target);
     });
@@ -189,23 +190,38 @@ const INSTAGRAM_URL = "https://instagram.com/fernandouhart";
   const dateInput = $("#f-date");
   dateInput.min = new Date().toISOString().slice(0, 10);
 
+  const fields = {
+    name:     { el: $("#f-name"), err: $("#e-name"), msg: () => "Tell me your name." },
+    date:     { el: $("#f-date"), err: $("#e-date"), msg: (v) => !v ? "Pick the date of your party." : (v < dateInput.min ? "That date has passed. Pick one coming up." : "") },
+    type:     { el: $("#f-type"), err: $("#e-type"), msg: () => "Choose the type of party." },
+    location: { el: $("#f-loc"),  err: $("#e-loc"),  msg: () => "Tell me the city or venue." },
+  };
+  const check = (key) => {
+    const f = fields[key], v = String(f.el.value || "").trim();
+    const m = key === "date" ? f.msg(v) : (v ? "" : f.msg());
+    f.err.textContent = m;
+    f.el.classList.toggle("is-invalid", !!m);
+    f.el.setAttribute("aria-invalid", m ? "true" : "false");
+    return !m;
+  };
+  let tried = false;
+  Object.keys(fields).forEach((k) => {
+    const ev = k === "type" || k === "date" ? "change" : "blur";
+    fields[k].el.addEventListener(ev, () => { if (tried) check(k); });
+    fields[k].el.addEventListener("input", () => { if (tried && fields[k].el.classList.contains("is-invalid")) check(k); });
+  });
+
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    const data = Object.fromEntries(new FormData(form));
-    const required = ["name", "date", "type", "location"];
-    let firstBad = null;
-    required.forEach((k) => {
-      const el = form.elements[k];
-      const bad = !String(data[k] || "").trim();
-      el.classList.toggle("is-invalid", bad);
-      if (bad && !firstBad) firstBad = el;
-    });
-    if (firstBad) {
-      err.textContent = "I just need your name, the date, the type of party and where it is.";
-      firstBad.focus();
+    tried = true;
+    const bad = Object.keys(fields).filter((k) => !check(k));
+    if (bad.length) {
+      err.textContent = bad.length === 1 ? "One thing is missing." : `${bad.length} things are missing.`;
+      fields[bad[0]].el.focus();
       return;
     }
     err.textContent = "";
+    const data = Object.fromEntries(new FormData(form));
 
     const when = new Date(data.date + "T12:00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" });
     const msg = [
@@ -217,13 +233,77 @@ const INSTAGRAM_URL = "https://instagram.com/fernandouhart";
       data.message ? `• Details: ${data.message}` : null,
     ].filter(Boolean).join("\n");
 
-    const first = data.name.trim().split(" ")[0];
+    const first = data.name.trim().split(/\s+/)[0];
     $(".form-body", form).hidden = true;
     $("[data-done]").hidden = false;
     $("[data-send]").href = waLink(msg);
     $("[data-done-text]").textContent = `Almost there, ${first}. Tap below and your message about ${when} goes straight to my WhatsApp.`;
+    $("[data-send]").focus();
   });
-  form.addEventListener("input", (e) => {
-    if (e.target.classList.contains("is-invalid") && e.target.value.trim()) e.target.classList.remove("is-invalid");
-  });
+
+  // ---- Records speed up under your hand (playbackRate eases, so they never jump) ----
+  const spinTo = (els, target) => {
+    els.forEach((el) => el.getAnimations().forEach((a) => {
+      cancelAnimationFrame(a._raf);
+      const tick = () => {
+        const r = a.playbackRate + (target - a.playbackRate) * 0.12;
+        a.playbackRate = Math.abs(target - r) < 0.01 ? target : r;
+        if (a.playbackRate !== target) a._raf = requestAnimationFrame(tick);
+      };
+      tick();
+    }));
+  };
+  const decks = $("[data-decks]");
+  if (decks && !reduced) {
+    const vinyls = $$(".vinyl", decks);
+    decks.addEventListener("pointerenter", () => spinTo(vinyls, 2.6));
+    decks.addEventListener("pointerleave", () => spinTo(vinyls, 1));
+    decks.addEventListener("pointerdown", () => spinTo(vinyls, 2.6));
+    decks.addEventListener("pointerup", (e) => { if (e.pointerType !== "mouse") spinTo(vinyls, 1); });
+  }
+  const brand = $(".nav .brand");
+  if (brand && !reduced) {
+    const disc = [$(".brand-disc", brand)];
+    brand.addEventListener("pointerenter", () => spinTo(disc, 4));
+    brand.addEventListener("pointerleave", () => spinTo(disc, 1));
+  }
+
+  // ---- Venue strip: pause control (moving content must be stoppable) ----
+  const strip = $("[data-marquee]"), toggle = $("[data-marquee-toggle]");
+  if (strip && toggle) {
+    toggle.addEventListener("click", () => {
+      const paused = strip.classList.toggle("is-paused");
+      toggle.setAttribute("aria-pressed", String(paused));
+      toggle.setAttribute("aria-label", paused ? "Play the moving list" : "Pause the moving list");
+    });
+  }
+
+  // ---- Current section in the nav ----
+  const links = $$("[data-nav-link]");
+  const secIO = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      links.forEach((a) => a.setAttribute("aria-current", a.getAttribute("href") === `#${e.target.id}` ? "true" : "false"));
+    });
+  }, { rootMargin: "-45% 0px -50% 0px" });
+  ["journey", "music", "services"].forEach((id) => { const el = document.getElementById(id); if (el) secIO.observe(el); });
+  const clearIO = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) links.forEach((a) => a.setAttribute("aria-current", "false")); });
+  }, { rootMargin: "-45% 0px -50% 0px" });
+  [$(".hero"), $("#book")].forEach((el) => el && clearIO.observe(el));
+
+  // ---- Sticky booking bar on phones: after the hero, until the form is in view ----
+  const ctaBar = $("[data-mobile-cta]");
+  if (ctaBar) {
+    const barLink = $("a", ctaBar);
+    let pastHero = false, atBook = false;
+    const sync = () => {
+      const on = pastHero && !atBook;
+      ctaBar.classList.toggle("is-on", on);
+      ctaBar.setAttribute("aria-hidden", String(!on));
+      barLink.tabIndex = on ? 0 : -1;
+    };
+    new IntersectionObserver(([e]) => { pastHero = !e.isIntersecting && e.boundingClientRect.top < 0; sync(); }).observe($(".hero-actions"));
+    new IntersectionObserver(([e]) => { atBook = e.isIntersecting; sync(); }, { rootMargin: "0px 0px -20% 0px" }).observe($("#book"));
+  }
 })();
