@@ -543,6 +543,16 @@ section { position: relative; }
 .book-lede { margin-top: 24px; max-width: 34ch; font-size: 18px; line-height: 1.55; color: var(--gray); }
 .social { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 12px; }
 .social .ic { font-size: 19px; }
+.contact-line a { color: var(--bone); text-decoration: underline; text-decoration-color: var(--hair-2); text-underline-offset: 3px; user-select: text; }
+.contact-line { display: grid; gap: 4px; }
+.contact-line li { color: var(--bone); }
+.contact-line li span { display: inline-block; min-width: 84px; color: var(--gray); }
+.social { gap: 10px !important; }
+.social .btn { padding: 0 20px; }
+@media (min-width: 981px) {
+  .social { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .social .btn { padding: 0 12px; gap: 8px; font-size: 14px; }
+}
 .contact-line { margin-top: 20px; font-size: var(--fs-meta); color: var(--gray); }
 .form-done .btn { margin-top: 16px; }
 
