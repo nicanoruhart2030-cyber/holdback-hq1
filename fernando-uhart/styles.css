@@ -13,20 +13,16 @@
   --hair: rgba(242, 238, 230, 0.10);
   --hair-2: rgba(242, 238, 230, 0.18);
 
-  --display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
-  --body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --display: "Bebas Neue", "Oswald", "Arial Narrow", Impact, sans-serif;
+  --body: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  /* Type roles. Display face: two widths only.
-     --cond-display  posters, numerals, section headlines (900)
-     --cond-title    card and row titles, the name (800)          */
-  --cond-display: 62%;
-  --cond-title: 68%;
+  /* Type roles. Display: Bebas Neue (one weight, caps only). Body: DM Sans. */
   --fs-label: 12px;     /* uppercase labels: eras, section labels, tags on screens */
   --fs-meta: 14px;      /* bylines, stat captions, contact line, footer */
   --fs-small: 15px;     /* body inside small cards */
   --fs-body: 16px;
   --fs-lead: clamp(19px, 1.2vw + 13px, 24px);
-  --fs-title: 32px;
+  --fs-title: 36px;
 
   --r-card: 22px;
   --wrap: 1200px;
@@ -43,7 +39,6 @@ body {
   font: 400 var(--fs-body)/1.6 var(--body);
   letter-spacing: .005em; /* light on dark reads a touch tight */
   font-optical-sizing: auto;
-  font-feature-settings: "cv11"; /* Inter's single-storey a: warmer, less stock */
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -124,8 +119,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
   content: ""; position: absolute; left: 50%; top: 8px; width: 1.5px; height: 3px; margin-left: -.75px; background: var(--bone);
 }
 .brand-name {
-  font-family: var(--display); font-stretch: var(--cond-title); font-weight: 800;
-  font-size: 19px; line-height: 1; letter-spacing: .05em; text-transform: uppercase;
+  font-family: var(--display); font-weight: 400;
+  font-size: 24px; line-height: 1; letter-spacing: .04em; text-transform: uppercase;
   padding-top: 1px;
 }
 @media (hover: hover) and (pointer: fine) {
@@ -167,8 +162,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 /* Poster headline across the full width */
 .hero-title {
-  font-family: var(--display); font-stretch: var(--cond-display); font-weight: 900;
-  font-size: clamp(76px, 11.2vw, 172px); line-height: .84; letter-spacing: -.01em;
+  font-family: var(--display); font-weight: 400;
+  font-size: clamp(84px, 13vw, 198px); line-height: .9; letter-spacing: 0;
   text-transform: uppercase; text-wrap: balance;
   padding-bottom: 40px; border-bottom: 1px solid var(--hair);
 }
@@ -263,7 +258,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .stat { padding: 56px 0 52px; display: flex; flex-direction: column; gap: 12px; }
 .stat + .stat { padding-left: 32px; border-left: 1px solid var(--hair); }
 .stat-num {
-  font-family: var(--display); font-stretch: var(--cond-display); font-weight: 900;
+  font-family: var(--display); font-weight: 400;
   font-size: clamp(56px, 7vw, 104px); line-height: .88; letter-spacing: -.01em;
   font-variant-numeric: tabular-nums; text-transform: uppercase;
 }
@@ -278,11 +273,11 @@ section { position: relative; }
   display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;
 }
 .section-head-stack { display: block; }
-.kicker, .era { font-size: var(--fs-label); font-weight: 600; line-height: 1.3; letter-spacing: .14em; text-transform: uppercase; color: var(--gray); font-feature-settings: "case", "cv11"; }
+.kicker, .era { font-size: var(--fs-label); font-weight: 600; line-height: 1.3; letter-spacing: .14em; text-transform: uppercase; color: var(--gray); font-feature-settings: "case"; }
 .section-title {
   margin-top: 16px;
-  font-family: var(--display); font-stretch: var(--cond-display); font-weight: 900;
-  font-size: clamp(48px, 6.4vw, 88px); line-height: .92; letter-spacing: -.005em; text-transform: uppercase;
+  font-family: var(--display); font-weight: 400;
+  font-size: clamp(52px, 6.8vw, 96px); line-height: .94; letter-spacing: .005em; text-transform: uppercase;
 }
 .section-sub { margin-top: 16px; font-size: var(--fs-lead); line-height: 1.42; color: var(--gray); }
 
@@ -350,8 +345,8 @@ section { position: relative; }
   position: relative; overflow: hidden;
 }
 .card h3 {
-  font-family: var(--display); font-stretch: var(--cond-title); font-weight: 800;
-  font-size: var(--fs-title); line-height: .96; text-transform: uppercase;
+  font-family: var(--display); font-weight: 400;
+  font-size: 36px; line-height: .98; letter-spacing: .01em; text-transform: uppercase;
 }
 .card > p:not(.card-place):not(.retro):not(.big-num-label) { margin-top: 12px; color: var(--gray); font-size: var(--fs-small); line-height: 1.55; }
 .card-place {
@@ -363,7 +358,7 @@ section { position: relative; }
 .card[class="card"]::before { /* big chapter number, outlined in gray */
   content: counter(ch, decimal-leading-zero);
   position: absolute; top: 60px; right: 24px;
-  font-family: var(--display); font-stretch: var(--cond-display); font-weight: 900;
+  font-family: var(--display); font-weight: 400;
   font-size: 140px; line-height: 1; letter-spacing: -.02em;
   color: transparent; -webkit-text-stroke: 1.5px rgba(242,238,230,.16);
 }
@@ -412,11 +407,11 @@ section { position: relative; }
 /* Yo salí en los 80 (red allowed) */
 .retro {
   position: absolute; top: 28px; left: 28px; right: 28px;
-  font-family: var(--display); font-stretch: 100%; font-style: italic; font-weight: 900;
-  font-size: 22px; line-height: 1; text-transform: uppercase; letter-spacing: -.005em; white-space: nowrap;
+  font-family: var(--display); font-style: normal; font-weight: 400; transform: skewX(-10deg); transform-origin: 0 100%;
+  font-size: 30px; line-height: 1; text-transform: uppercase; letter-spacing: .02em; white-space: nowrap;
   color: var(--red);
 }
-.big-num { font-variant-numeric: tabular-nums lining-nums; display: flex; align-items: flex-start; font-family: var(--display); font-stretch: var(--cond-display); font-weight: 900; font-size: 104px; line-height: .85; letter-spacing: -.01em; }
+.big-num { font-variant-numeric: tabular-nums lining-nums; display: flex; align-items: flex-start; font-family: var(--display); font-weight: 400; font-size: 104px; line-height: .85; letter-spacing: -.01em; }
 .big-num em { font-style: normal; font-size: .5em; color: var(--red); margin-left: 4px; }
 .big-num-label { margin-top: 10px; margin-bottom: 16px; font-size: 14px; color: var(--bone); font-weight: 500; }
 
@@ -457,7 +452,7 @@ section { position: relative; }
 }
 .set-row:last-child { border-bottom: 1px solid var(--hair); }
 .decade-num {
-  font-family: var(--display); font-stretch: var(--cond-display); font-weight: 900;
+  font-family: var(--display); font-weight: 400;
   font-size: clamp(96px, 13vw, 184px); line-height: .8; letter-spacing: -.02em; text-transform: uppercase;
   color: transparent; -webkit-text-stroke: 1.5px var(--gray);
   transition: color 300ms ease;
@@ -466,7 +461,7 @@ section { position: relative; }
 @media (hover: hover) and (pointer: fine) {
   .set-row:hover .decade-num { color: var(--card); }
 }
-.set-row h3 { font-family: var(--display); font-stretch: var(--cond-title); font-weight: 800; font-size: var(--fs-title); line-height: .96; text-transform: uppercase; padding-bottom: 6px; }
+.set-row h3 { font-family: var(--display); font-weight: 400; font-size: 36px; line-height: .98; letter-spacing: .01em; text-transform: uppercase; padding-bottom: 6px; }
 .set-row p { font-size: var(--fs-body); line-height: 1.55; color: var(--gray); max-width: 34ch; padding-bottom: 4px; }
 .music-note {
   max-width: var(--wrap); margin: 48px auto 0; padding: 0 var(--gutter);
@@ -492,14 +487,14 @@ section { position: relative; }
 .service-feature > :not(.feature-type) { position: relative; max-width: 46%; }
 .service-feature .service-icon { font-size: 40px; }
 .service-feature h3 {
-  font-family: var(--display); font-stretch: var(--cond-display); font-weight: 900; text-transform: uppercase;
+  font-family: var(--display); font-weight: 400; text-transform: uppercase;
   font-size: clamp(44px, 5vw, 68px); line-height: .92;
 }
 .service-feature p { font-size: 17px; max-width: 34ch; margin-top: 14px; }
 .service-feature .text-link { margin-top: 24px; align-self: flex-start; }
 .feature-type {
   position: absolute; right: 44px; top: 50%; transform: translateY(-50%);
-  font-family: var(--display); font-stretch: var(--cond-display); font-weight: 900;
+  font-family: var(--display); font-weight: 400;
   font-size: clamp(120px, 15vw, 220px); line-height: .82; letter-spacing: -.02em; text-transform: uppercase; text-align: right;
   color: transparent; -webkit-text-stroke: 1.5px rgba(242,238,230,.22);
 }
@@ -552,7 +547,7 @@ section { position: relative; }
 .form-done[hidden], .form-body[hidden] { display: none; }
 .done-icon { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; color: var(--ink); background: var(--bone); margin-bottom: 8px; }
 .done-icon .ic { stroke-width: 2.2; }
-.form-done h3 { font-family: var(--display); font-stretch: var(--cond-display); font-weight: 900; font-size: 48px; line-height: 1; text-transform: uppercase; }
+.form-done h3 { font-family: var(--display); font-weight: 400; font-size: 48px; line-height: 1; text-transform: uppercase; }
 .form-done p { color: var(--gray); max-width: 32ch; }
 
 /* ---------- Footer ---------- */
@@ -563,7 +558,7 @@ section { position: relative; }
   font-size: 14px; color: var(--gray);
 }
 .footer .brand-disc { width: 24px; height: 24px; }
-.footer .brand-name { font-size: 17px; color: var(--bone); }
+.footer .brand-name { font-size: 21px; color: var(--bone); }
 .footer-copy { margin-left: auto; }
 
 /* ---------- Scroll reveal ---------- */
