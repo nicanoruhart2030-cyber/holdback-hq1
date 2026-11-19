@@ -263,7 +263,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font-variant-numeric: tabular-nums; text-transform: uppercase;
 }
 .stat-num { white-space: nowrap; }
-.stat-word { font-size: clamp(44px, 5.4vw, 80px); line-height: 1.04; }
+/* Smaller words inside the number's own line, so they share its baseline */
+.stat-word { font-size: .76em; line-height: 0; }
 .stat-label { font-size: var(--fs-meta); line-height: 1.4; color: var(--gray); max-width: 22ch; }
 
 /* ---------- Section heads ---------- */
