@@ -123,7 +123,7 @@ const INSTAGRAM_URL = "";
   // ---- Social links ----
   const wa = $("[data-whatsapp]"), ig = $("[data-instagram]");
   const waLink = (text) => `https://wa.me/${WHATSAPP_NUMBER}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
-  if (WHATSAPP_NUMBER) wa.href = waLink("Hi Fernando! I'd like to ask about a date for my event.");
+  if (WHATSAPP_NUMBER) wa.href = waLink("Hola Fernando! I'd like to check a date for my party.");
   else wa.href = "#book";
   if (INSTAGRAM_URL) ig.href = INSTAGRAM_URL; else ig.href = "#book";
   [wa, ig].forEach((a) => { if (a.getAttribute("href") === "#book") a.removeAttribute("target"); });
@@ -148,7 +148,7 @@ const INSTAGRAM_URL = "";
       if (bad && !firstBad) firstBad = el;
     });
     if (firstBad) {
-      err.textContent = "Please fill in your name, the date, the event type and the location.";
+      err.textContent = "I just need your name, the date, the type of party and where it is.";
       firstBad.focus();
       return;
     }
@@ -156,11 +156,11 @@ const INSTAGRAM_URL = "";
 
     const when = new Date(data.date + "T12:00:00").toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" });
     const msg = [
-      `Hi Fernando! Booking request:`,
+      `Hola Fernando! Can you check this date?`,
       `• Name: ${data.name}`,
       `• Date: ${when}`,
-      `• Event: ${data.type}`,
-      `• Location: ${data.location}`,
+      `• Party: ${data.type}`,
+      `• Where: ${data.location}`,
       data.message ? `• Details: ${data.message}` : null,
     ].filter(Boolean).join("\n");
 
@@ -168,7 +168,7 @@ const INSTAGRAM_URL = "";
 
     $(".form-body", form).hidden = true;
     $("[data-done]").hidden = false;
-    $("[data-done-text]").textContent = `Thanks, ${data.name.split(" ")[0]}. Fernando will be in touch about ${when}.`;
+    $("[data-done-text]").textContent = `Thanks, ${data.name.split(" ")[0]}. I'll get back to you about ${when}.`;
   });
   form.addEventListener("input", (e) => {
     if (e.target.classList.contains("is-invalid") && e.target.value.trim()) e.target.classList.remove("is-invalid");
