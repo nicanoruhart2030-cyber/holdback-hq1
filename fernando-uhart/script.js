@@ -269,13 +269,12 @@ const INSTAGRAM_URL = "https://instagram.com/fernandouhart";
   }
 
   // ---- Venue strip: pause control (moving content must be stoppable) ----
-  const strip = $("[data-marquee]"), toggle = $("[data-marquee-toggle]");
-  if (strip && toggle) {
-    toggle.addEventListener("click", () => {
-      const paused = strip.classList.toggle("is-paused");
-      toggle.setAttribute("aria-pressed", String(paused));
-      toggle.setAttribute("aria-label", paused ? "Play the moving list" : "Pause the moving list");
-    });
+  // No visible button: tap or click the strip itself, or focus it and press Enter / Space
+  const strip = $("[data-marquee]");
+  if (strip && !reduced) {
+    const flip = () => strip.setAttribute("aria-pressed", String(strip.classList.toggle("is-paused")));
+    strip.addEventListener("click", flip);
+    strip.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
   }
 
   // ---- Current section in the nav ----

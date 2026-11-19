@@ -34,8 +34,6 @@
       <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1v-9z"/></symbol>
       <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 20l1.4-4.2A8 8 0 1 1 8.6 19L4 20z"/><path d="M9.5 9.5c.3 1.8 1.7 3.6 3.6 4.3l1.2-1.1 1.7.8-.4 1.6c-3.4.2-6.6-2.9-6.6-6.5l1.6-.4.8 1.7-1.1 1.1"/></symbol>
       <symbol id="i-insta" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r=".6" fill="currentColor"/></symbol>
-      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></symbol>
-      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
     </defs>
   </svg>
@@ -100,12 +98,11 @@
 
 
     <!-- Venue strip -->
-    <section class="venues" aria-label="Where I’ve played" data-marquee>
+    <section class="venues" aria-label="Where I’ve played. Press to pause or play the moving list." data-marquee tabindex="0" role="button" aria-pressed="false">
       <div class="venues-track">
         <ul class="venues-list"><li>Puig Mayor</li><li>Sobremonte</li><li>Gap</li><li>Network</li><li>La Caseta Playa</li><li class="v-accent">Yo salí en los 80</li><li>Mar del Plata</li><li>Buenos Aires</li><li>Mexico</li><li>Colombia</li></ul>
         <ul class="venues-list" aria-hidden="true"><li>Puig Mayor</li><li>Sobremonte</li><li>Gap</li><li>Network</li><li>La Caseta Playa</li><li class="v-accent">Yo salí en los 80</li><li>Mar del Plata</li><li>Buenos Aires</li><li>Mexico</li><li>Colombia</li></ul>
       </div>
-      <button class="venues-toggle" type="button" data-marquee-toggle aria-pressed="false" aria-label="Pause the moving list"><svg class="ic i-pause"><use href="#i-pause"/></svg><svg class="ic i-play"><use href="#i-play"/></svg></button>
     </section>
 
     <!-- 3. STATS -->

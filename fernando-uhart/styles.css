@@ -620,20 +620,10 @@ main:focus { outline: none; }
 .venues-list li::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--bone); margin: 0 32px; opacity: .5; }
 .venues-list .v-accent { color: var(--red); }
 @keyframes marquee { to { transform: translateX(-50%); } }
-.venues.is-paused .venues-track, .venues:focus-within .venues-track { animation-play-state: paused; }
+.venues.is-paused .venues-track { animation-play-state: paused; }
 @media (hover: hover) and (pointer: fine) { .venues:hover .venues-track { animation-play-state: paused; } }
-.venues-toggle {
-  position: absolute; right: var(--gutter); top: 50%; transform: translateY(-50%);
-  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 16px;
-  background: var(--ink); border: 1px solid var(--hair-2); color: var(--bone); cursor: pointer; z-index: 2;
-}
-.venues::after { /* a solid ink panel at the right edge: names slide under it, cleanly */
-  content: ""; position: absolute; top: 0; right: 0; bottom: 0; z-index: 1;
-  width: calc(var(--gutter) + 64px); background: var(--ink); border-left: 1px solid var(--hair);
-}
-.venues-toggle .i-play, .venues.is-paused .venues-toggle .i-pause { display: none; }
-.venues.is-paused .venues-toggle .i-play { display: block; }
-.venues-toggle:active { transform: translateY(-50%) scale(.95); }
+.venues { cursor: pointer; }
+.venues:focus-visible { outline: 2px solid var(--bone); outline-offset: -2px; border-radius: 0; }
 
 /* ---------- Field errors ---------- */
 .optional { color: var(--gray); font-weight: 400; opacity: .8; }
@@ -679,7 +669,6 @@ main:focus { outline: none; }
   .venues-list li { font-size: 26px; }
   .venues-list li::after { margin: 0 22px; }
   .venues-list { padding: 16px 0; }
-  .venues-toggle { width: 36px; height: 36px; }
   .hero { padding: 112px 0 72px; }
   .hero-sub { margin-top: 22px; }
   .hero-actions { margin-top: 32px; }
@@ -724,7 +713,7 @@ main:focus { outline: none; }
   .venues-list { flex-wrap: wrap; flex-shrink: 1; row-gap: 14px; padding-inline: var(--gutter); }
   .venues-list li:last-child::after { display: none; }
   .venues-list[aria-hidden] { display: none; }
-  .venues-toggle, .venues::after { display: none; }
+  .venues { cursor: default; }
   .mobile-cta { transition: none; }
   .reveal { transform: none; transition: opacity 300ms ease; }
   .btn:active, .round-btn:active { transform: none; }
