@@ -123,7 +123,7 @@ const INSTAGRAM_URL = "https://instagram.com/fernandouhart";
   // ---- Social links ----
   const wa = $("[data-whatsapp]"), ig = $("[data-instagram]");
   const waLink = (text) => `https://wa.me/${WHATSAPP_NUMBER}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
-  if (WHATSAPP_NUMBER) wa.href = waLink("Hola Fernando! I'd like to check a date for my party.");
+  if (WHATSAPP_NUMBER) wa.href = waLink("Hola Fernando! I’d like to check a date for my party.");
   else wa.href = "#book";
   if (INSTAGRAM_URL) ig.href = INSTAGRAM_URL; else ig.href = "#book";
   [wa, ig].forEach((a) => { if (a.getAttribute("href") === "#book") a.removeAttribute("target"); });
