@@ -92,20 +92,20 @@
     <section class="stats" aria-label="In numbers">
       <ul class="stats-inner">
         <li class="stat reveal">
-          <span class="stat-num"><span data-count="40">40</span>+</span>
-          <span class="stat-label">years behind the decks</span>
+          <span class="stat-num"><span data-count="40">40</span></span>
+          <span class="stat-label">years behind the decks, and counting</span>
         </li>
         <li class="stat reveal">
-          <span class="stat-num"><span data-count="2000" data-format="thousands">2,000</span>+</span>
-          <span class="stat-label">people a night at Yo salí en los 80</span>
+          <span class="stat-num"><span data-count="2000" data-format="thousands">2,000</span></span>
+          <span class="stat-label">people or more, every night of Yo salí en los&nbsp;80</span>
         </li>
         <li class="stat reveal">
           <span class="stat-num"><span data-count="6000" data-format="thousands">6,000</span></span>
-          <span class="stat-label">dancing at home, live from Colombia</span>
+          <span class="stat-label">dancing at home, live from&nbsp;Colombia</span>
         </li>
         <li class="stat reveal">
           <span class="stat-num stat-word">Best DJ</span>
-          <span class="stat-label">of the Season, Mar del Plata</span>
+          <span class="stat-label">of the Season, Mar del&nbsp;Plata</span>
         </li>
       </ul>
     </section>
@@ -120,13 +120,13 @@
         <div class="journey-controls">
           <button class="round-btn" data-prev aria-label="Previous chapter"><svg class="ic"><use href="#i-left"/></svg></button>
           <button class="round-btn" data-next aria-label="Next chapter"><svg class="ic"><use href="#i-right"/></svg></button>
-          <p class="hint">Drag to scroll</p>
+          <p class="hint">Drag the bar or the cards</p>
         </div>
-        <div class="progress" aria-hidden="true"><span data-progress></span></div>
+        <div class="progress" data-scrub role="scrollbar" tabindex="0" aria-label="Scroll the timeline" aria-controls="journey-track" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span data-progress></span></div>
       </header>
 
       <div class="track-wrap">
-        <ol class="track" data-track tabindex="0" aria-label="Career timeline">
+        <ol class="track" id="journey-track" data-track tabindex="0" aria-label="Career timeline">
 
           <li class="chapter">
             <span class="era">Ages 15–17</span>

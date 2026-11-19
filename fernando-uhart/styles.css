@@ -439,9 +439,25 @@ section { position: relative; }
 .card-today h3 { font-size: 42px; }
 .card-today .btn { margin-top: 24px; align-self: flex-start; background: var(--ink); color: var(--bone); }
 
-.progress { margin-top: 28px; max-width: 220px; }
-.progress::before { content: ""; display: block; height: 1px; background: var(--hair); }
-.progress span { display: block; height: 1px; margin-top: -1px; width: 0; background: var(--bone); transition: width 150ms linear; }
+/* Timeline scrollbar: drag the handle, click the rail, or use arrow keys */
+.progress {
+  position: relative; margin-top: 20px; max-width: 260px; height: 28px;
+  cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.progress::before { /* rail */
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px;
+  border-radius: 2px; background: var(--hair-2);
+}
+.progress span { /* handle */
+  position: absolute; left: 0; top: 50%; height: 4px; margin-top: -2px; width: 20%;
+  border-radius: 4px; background: var(--bone);
+  transition: height 160ms var(--ease-out), margin-top 160ms var(--ease-out);
+}
+.progress.is-active { cursor: grabbing; }
+.progress.is-active span, .progress:focus-visible span { height: 8px; margin-top: -4px; }
+@media (hover: hover) and (pointer: fine) {
+  .progress:hover span { height: 8px; margin-top: -4px; }
+}
 
 /* ---------- Music ---------- */
 .music { padding: 112px 0 128px; }

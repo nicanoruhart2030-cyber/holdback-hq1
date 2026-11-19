@@ -66,14 +66,26 @@ const INSTAGRAM_URL = "https://instagram.com/fernandouhart";
   const track = $("[data-track]");
   const prev = $("[data-prev]"), next = $("[data-next]");
   const bar = $("[data-progress]");
+  const scrub = $("[data-scrub]");
   const step = () => {
     const c = track.querySelector(".chapter");
-    return c ? c.getBoundingClientRect().width + 20 : 340;
+    const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+    return c ? c.getBoundingClientRect().width + gap : 336;
+  };
+  // Handle size shows how much of the timeline is in view; its position shows where.
+  const thumbFrac = () => Math.min(1, Math.max(0.12, track.clientWidth / track.scrollWidth));
+  // Nearest chapter, but let the end of the rail reach the last card
+  const snapTarget = () => {
+    const s = step(), max = track.scrollWidth - track.clientWidth, x = track.scrollLeft;
+    return max - x < s / 2 ? max : Math.min(max, Math.round(x / s) * s);
   };
   const update = () => {
     const max = track.scrollWidth - track.clientWidth;
     const p = max > 0 ? track.scrollLeft / max : 0;
-    bar.style.width = `${Math.max(6, p * 100)}%`;
+    const f = thumbFrac();
+    bar.style.width = `${f * 100}%`;
+    bar.style.left = `${p * (1 - f) * 100}%`;
+    scrub.setAttribute("aria-valuenow", String(Math.round(p * 100)));
     prev.disabled = track.scrollLeft < 4;
     next.disabled = track.scrollLeft > max - 4;
   };
@@ -86,6 +98,48 @@ const INSTAGRAM_URL = "https://instagram.com/fernandouhart";
     if (e.key === "ArrowLeft") { e.preventDefault(); prev.click(); }
   });
   update();
+
+  // Scrollbar: drag the handle, or press the rail to jump there and keep dragging
+  let scrubbing = false, grab = 0;
+  const railPos = (clientX) => {
+    const r = scrub.getBoundingClientRect();
+    const thumbW = r.width * thumbFrac();
+    const usable = r.width - thumbW;
+    const x = clientX - r.left - grab;
+    return usable > 0 ? Math.min(1, Math.max(0, x / usable)) : 0;
+  };
+  scrub.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    const tb = bar.getBoundingClientRect();
+    // Grabbing the handle keeps its offset; pressing the rail centres the handle under the pointer
+    grab = (e.clientX >= tb.left && e.clientX <= tb.right) ? e.clientX - tb.left : tb.width / 2;
+    scrubbing = true;
+    scrub.setPointerCapture(e.pointerId);
+    scrub.classList.add("is-active");
+    track.classList.add("is-dragging");
+    track.scrollLeft = railPos(e.clientX) * (track.scrollWidth - track.clientWidth);
+    e.preventDefault();
+  });
+  scrub.addEventListener("pointermove", (e) => {
+    if (!scrubbing) return;
+    track.scrollLeft = railPos(e.clientX) * (track.scrollWidth - track.clientWidth);
+  });
+  const endScrub = () => {
+    if (!scrubbing) return;
+    scrubbing = false;
+    scrub.classList.remove("is-active");
+    track.classList.remove("is-dragging");
+    track.scrollTo({ left: snapTarget(), behavior: "smooth" });
+  };
+  scrub.addEventListener("pointerup", endScrub);
+  scrub.addEventListener("pointercancel", endScrub);
+  scrub.addEventListener("keydown", (e) => {
+    const max = track.scrollWidth - track.clientWidth;
+    if (e.key === "ArrowRight") { e.preventDefault(); next.click(); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); prev.click(); }
+    else if (e.key === "Home") { e.preventDefault(); track.scrollTo({ left: 0, behavior: "smooth" }); }
+    else if (e.key === "End") { e.preventDefault(); track.scrollTo({ left: max, behavior: "smooth" }); }
+  });
 
   // Mouse drag (touch already scrolls natively)
   let down = false, startX = 0, startLeft = 0, moved = false;
@@ -105,8 +159,7 @@ const INSTAGRAM_URL = "https://instagram.com/fernandouhart";
     if (moved) {
       // let snap settle on the nearest chapter
       track.classList.remove("is-dragging");
-      const s = step();
-      track.scrollTo({ left: Math.round(track.scrollLeft / s) * s, behavior: "smooth" });
+      track.scrollTo({ left: snapTarget(), behavior: "smooth" });
     }
   });
   // Vertical wheel scrolls the timeline sideways only while it is hovered and has room
