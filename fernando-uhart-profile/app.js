@@ -19,6 +19,12 @@
   $$("[data-f=location]").forEach((el) => (el.textContent = P.location || ""));
   if (!P.location) $("[data-loc-row]").hidden = true;
   $$("[data-f=headline-short]").forEach((el) => (el.innerHTML = P.headline ? esc(P.headline.split(/[|·]/)[0].trim()) : skel("160px")));
+  const split = $("[data-split]");
+  if (split) {
+    const words = split.textContent.trim().split(/\s+/);
+    split.setAttribute("aria-label", words.join(" "));
+    split.innerHTML = words.map((w, i) => `<span class="w" aria-hidden="true"><span style="--i:${i}">${esc(w)}</span></span>`).join(" ");
+  }
   if (P.headline) document.title = `${P.name} · ${P.headline}`;
 
   // ---- About ----
@@ -52,14 +58,14 @@
 
   // ---- Skills / education / languages ----
   const skills = P.skills || [];
-  $("[data-skills]").innerHTML = skills.length ? skills.map((s) => `<li>${esc(s)}</li>`).join("") : `<li class="todo">Add skills from LinkedIn</li>`;
+  $("[data-skills]").innerHTML = skills.length ? skills.map((s, i) => `<li style="--i:${i}">${esc(s)}</li>`).join("") : `<li class="todo">Add skills from LinkedIn</li>`;
   if (P.skillsMore && skills.length) { const a = $("[data-skills-more]"); a.href = P.skillsMore; a.hidden = false; }
   if (P.educationMore && (P.education || []).length) { const a = $("[data-edu-more]"); a.href = P.educationMore; a.hidden = false; }
   // ---- Highlights ----
   const hl = P.highlights || [];
   if (hl.length) {
     $("[data-highlights]").innerHTML = hl.map((h) => `
-      <div class="hl reveal"><dt class="hl-label">${esc(h.label)}</dt><dd class="hl-value">${esc(h.value)}${h.unit ? ` <span>${esc(h.unit)}</span>` : ""}</dd></div>`).join("");
+      <div class="hl reveal"><dt class="hl-label">${esc(h.label)}</dt><dd class="hl-value">${(() => { const m = String(h.value).match(/^([A-Z]{3})\s+(.+)$/); const num = m ? m[2] : h.value; return `${m ? `<span class="hl-pre">${esc(m[1])}</span>` : ""}<span class="hl-num" data-count="${esc(num)}">${esc(num)}</span>`; })()}${h.unit ? `<span class="hl-unit">${esc(h.unit)}</span>` : ""}</dd></div>`).join("");
   } else $("[data-highlights-wrap]").hidden = true;
   const edu = P.education || [];
   $("[data-education]").innerHTML = edu.length
@@ -110,9 +116,9 @@
     const pct = (y) => ((y - min) / range) * 100;
     const ticks = [min, Math.round(min + range / 3), Math.round(min + (2 * range) / 3), max];
     axisEl.innerHTML = ticks.map((t) => `<span style="left:${Math.min(96, Math.max(4, pct(t)))}%">${t}</span>`).join("");
-    lanesEl.innerHTML = spans.map((s) => `
+    lanesEl.innerHTML = spans.map((s, i) => `
       <div class="lane"><span class="lane-label" title="${esc(s.company)}">${/^Scotiabank /.test(s.company) ? `<span class="lane-pre">Scotiabank </span>${esc(s.company.slice(11))}` : esc(s.company)}</span>
-        <span class="lane-track"><span class="bar${s.now ? " is-now" : ""}" style="left:${pct(s.start)}%;width:${Math.max(3, pct(s.end) - pct(s.start))}%"></span></span></div>`).join("");
+        <span class="lane-track"><span class="bar${s.now ? " is-now" : ""}" style="--i:${i};left:${pct(s.start)}%;width:${Math.max(3, pct(s.end) - pct(s.start))}%"></span></span></div>`).join("");
   } else {
     // No data yet: neutral placeholder bars, like a product shot before content loads
     const fake = [[0, 22], [18, 38], [36, 58], [55, 80], [78, 100]];
@@ -272,6 +278,43 @@
     });
   }, { rootMargin: "0px 0px -10% 0px" });
   $$(".reveal").forEach((el) => io.observe(el));
+
+  // ---- Count-up on the highlight numbers ----
+  const countIO = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      countIO.unobserve(e.target);
+      const dd = e.target, full = dd.dataset.count, m = full.match(/[\d,]+/);
+      if (!m || reduced) return;
+      const node = dd.firstChild;
+      const target = parseInt(m[0].replace(/,/g, ""), 10), comma = m[0].includes(",");
+      const fmt = (n) => (comma ? n.toLocaleString("en-US") : String(n));
+      const t0 = performance.now(), dur = 1400;
+      const tick = (t) => {
+        const k = Math.min(1, (t - t0) / dur), eased = 1 - Math.pow(1 - k, 4);
+        node.nodeValue = full.replace(m[0], fmt(Math.round(target * eased)));
+        if (k < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  }, { rootMargin: "0px 0px -15% 0px" });
+  $$("[data-count]").forEach((el) => countIO.observe(el));
+
+  // ---- Experience rail: fills as you read, dots light up ----
+  const wrapEl = $(".roles-wrap"), fill = $("[data-rail-fill]"), roleEls = $$(".role");
+  let railQueued = false;
+  const rail = () => {
+    railQueued = false;
+    const r = wrapEl.getBoundingClientRect(), mid = innerHeight * 0.55;
+    const k = Math.min(1, Math.max(0, (mid - r.top) / r.height));
+    fill.style.transform = `scaleY(${k})`;
+    roleEls.forEach((el) => el.classList.toggle("is-past", el.getBoundingClientRect().top + 40 < mid));
+  };
+  if (wrapEl && fill) {
+    addEventListener("scroll", () => { if (!railQueued) { railQueued = true; requestAnimationFrame(rail); } }, { passive: true });
+    addEventListener("resize", rail);
+    rail();
+  }
 
   // ---- Nav: border on scroll, current section ----
   const nav = $("[data-nav]");

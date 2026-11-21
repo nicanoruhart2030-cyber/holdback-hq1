@@ -12,7 +12,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230F172A'/%3E%3Ctext x='16' y='21.5' text-anchor='middle' font-family='Georgia,serif' font-size='15' fill='%23F7F6F2'%3EFU%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -49,7 +49,7 @@
     <section class="hero" id="top" aria-labelledby="hero-name">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <h1 id="hero-name" class="display hero-in" style="--d:0ms"><span data-f="name">Fernando Uhart</span></h1>
+          <h1 id="hero-name" class="display"><span data-f="name" data-split>Fernando Uhart</span></h1>
           <p class="hero-headline hero-in" style="--d:120ms" data-f="headline"></p>
           <p class="hero-loc hero-in" style="--d:180ms" data-loc-row><svg class="ic"><use href="#i-pin"/></svg><span data-f="location"></span></p>
           <div class="hero-actions hero-in" style="--d:240ms">
@@ -96,7 +96,7 @@
     <section class="section" id="about" aria-labelledby="about-title">
       <div class="wrap two-col">
         <h2 id="about-title" class="display h2 reveal">About</h2>
-        <div class="about-body reveal" data-about></div>
+        <div class="reveal"><p class="eyebrow">What I’m focused on</p><div class="about-body" data-about></div></div>
       </div>
     </section>
 
@@ -104,7 +104,7 @@
     <section class="section" id="experience" aria-labelledby="exp-title">
       <div class="wrap two-col">
         <div class="col-head reveal"><h2 id="exp-title" class="display h2">Experience</h2><p class="col-meta" data-exp-meta></p></div>
-        <ol class="roles" data-roles></ol>
+        <div class="roles-wrap"><span class="rail" aria-hidden="true"><i data-rail-fill></i></span><ol class="roles" data-roles></ol></div>
       </div>
     </section>
 
