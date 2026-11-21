@@ -28,10 +28,13 @@
 
   // ---- Experience ----
   const roles = (P.experience || []).filter((r) => r && (r.title || r.company));
+  const yrs = roles.map((r) => parseInt(String(r.start).match(/\d{4}/)?.[0], 10)).filter(Boolean);
+  const metaEl = $("[data-exp-meta]");
+  if (metaEl && roles.length && yrs.length) metaEl.textContent = `${roles.length} roles · ${Math.min(...yrs)}–present`;
   $("[data-roles]").innerHTML = roles.length
     ? roles.map((r) => `
       <li class="role reveal">
-        <p class="role-years">${esc(r.start || "")}${r.end ? "–" + esc(r.end) : ""}</p>
+        <p class="role-years">${esc(r.start || "")}${r.end ? "–" + esc(r.end) : ""}${String(r.end || "").toLowerCase().startsWith("present") ? `<span class="now-badge">Current</span>` : ""}</p>
         <div>
           <h3 class="role-title">${esc(r.title || "")}</h3>
           ${r.company ? `<p class="role-co">${esc(r.company)}</p>` : ""}
@@ -108,7 +111,7 @@
     const ticks = [min, Math.round(min + range / 3), Math.round(min + (2 * range) / 3), max];
     axisEl.innerHTML = ticks.map((t) => `<span style="left:${Math.min(96, Math.max(4, pct(t)))}%">${t}</span>`).join("");
     lanesEl.innerHTML = spans.map((s) => `
-      <div class="lane"><span class="lane-label">${esc(s.company)}</span>
+      <div class="lane"><span class="lane-label" title="${esc(s.company)}">${/^Scotiabank /.test(s.company) ? `<span class="lane-pre">Scotiabank </span>${esc(s.company.slice(11))}` : esc(s.company)}</span>
         <span class="lane-track"><span class="bar${s.now ? " is-now" : ""}" style="left:${pct(s.start)}%;width:${Math.max(3, pct(s.end) - pct(s.start))}%"></span></span></div>`).join("");
   } else {
     // No data yet: neutral placeholder bars, like a product shot before content loads
