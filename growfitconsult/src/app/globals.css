@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Palette. The accent is a single variable: change --accent (and --accent-ink,
+ * the text colour used on top of it) to re-theme the whole site.
+ */
+:root {
+  --bg: #080810;
+  --surface: #0d0d17;
+  --fg: #ededf2;
+  --muted: #9a9aa8;   /* 7.1:1 on --bg */
+  --faint: #6f6f7d;   /* large text and decoration only */
+  --line: rgba(237, 237, 242, 0.09);
+  --line-strong: rgba(237, 237, 242, 0.2);
+  --accent: #00e5a0;
+  --accent-ink: #04140e;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+    color: var(--fg);
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+    scroll-padding-top: 88px;
+    scrollbar-color: var(--line-strong) var(--bg);
+    accent-color: var(--accent);
+  }
+  body {
+    @apply font-sans antialiased;
+    font-size: 16px;
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv11", "ss01";
+  }
+  h1, h2, h3 { text-wrap: balance; }
+  p { text-wrap: pretty; }
+  ::selection { background: var(--accent); color: var(--accent-ink); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  a, button, summary, [role="button"] { touch-action: manipulation; }
+  input, textarea, select { font-size: 16px; caret-color: var(--accent); }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+}
+
+@layer components {
+  /* Page container: one gutter everywhere, respecting notches in landscape */
+  .container-page {
+    @apply mx-auto w-full max-w-page;
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+  @media (min-width: 768px) {
+    .container-page { padding-left: max(2.5rem, env(safe-area-inset-left)); padding-right: max(2.5rem, env(safe-area-inset-right)); }
+  }
+
+  /* Display type: Syne 800, tight */
+  /*
+   * Syne is very wide: the longest headline words measure 9.8em ("engagement",
+   * "Operaciones") to 12.4em ("Transformación"). Display sizes therefore scale
+   * with the space they have, and a word that still cannot fit hyphenates
+   * instead of overflowing.
+   */
+  .display {
+    @apply font-display font-extrabold;
+    letter-spacing: -0.035em;
+    line-height: 0.98;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+  .h-hero { font-size: clamp(2rem, calc((100vw - 3rem) / 10.4), 6rem); }
+  .h-section {
+    @apply display;
+    font-size: clamp(1.75rem, calc((100vw - 3rem) / 10.6), 3.5rem);
+  }
+  /* Titles inside cards size to the card itself */
+  .cq { container-type: inline-size; }
+  .h-card { font-size: clamp(1rem, 6.2cqi, 1.75rem); }
+  .h-step { font-size: clamp(1rem, 7cqi, 1.625rem); }
+  /* Stat numbers: the widest ("US$200MM", 8 mono characters) fits its column */
+  .h-stat { font-size: clamp(1.5rem, 16cqi, 3.5rem); }
+  .lead {
+    @apply text-[1.0625rem] leading-relaxed text-muted sm:text-lg;
+    max-width: 38rem;
+  }
+
+  /* Buttons: 8px radius, borders not shadows, press feedback */
+  .btn {
+    @apply inline-flex h-12 items-center justify-center gap-2 rounded-btn border px-5 text-[0.9375rem] font-medium;
+    transition: transform 160ms var(--ease-out), background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { @apply border-accent bg-accent text-accent-ink; }
+  .btn-ghost { @apply border-line-strong text-fg; }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover { background: color-mix(in srgb, var(--accent) 88%, white); }
+    .btn-ghost:hover { border-color: var(--fg); }
+  }
+
+  /* Form controls: square corners, hairline borders */
+  .field {
+    @apply w-full rounded-none border border-line-strong bg-transparent px-4 py-3 text-fg placeholder:text-faint;
+    transition: border-color 200ms ease;
+  }
+  .field:focus { @apply border-accent outline-none; }
+  .field[aria-invalid="true"] { border-color: #ff6b6b; }
+
+  .card { @apply rounded-card border border-line bg-surface; }
+
+  .num { @apply font-mono; font-variant-numeric: tabular-nums; }
+}
+
+/* Hero entrance: CSS, so it starts at first paint */
+@keyframes hero-in {
+  from { opacity: 0.001; transform: translateY(var(--y, 16px)); }
+}
+.hero-in { animation: hero-in 900ms var(--ease-out) var(--d, 0ms) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:active { transform: none; }
+  .hero-in { animation: hero-fade 400ms ease var(--d, 0ms) both; }
+}
+@keyframes hero-fade { from { opacity: 0.001; } }
