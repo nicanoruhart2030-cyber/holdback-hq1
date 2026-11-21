@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Fernando Uhart</title>
+  <meta name="description" content="Fernando Uhart: profile, experience and contact.">
+  <meta name="theme-color" content="#F7F6F2">
+  <meta property="og:type" content="profile">
+  <meta property="og:title" content="Fernando Uhart">
+  <meta property="og:description" content="Profile, experience and contact.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230F172A'/%3E%3Ctext x='16' y='21.5' text-anchor='middle' font-family='Georgia,serif' font-size='15' fill='%23F7F6F2'%3EFU%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+      <symbol id="i-out" viewBox="0 0 24 24"><path d="M7 17L17 7M8 7h9v9"/></symbol>
+      <symbol id="i-in" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 10.5V16M8 7.5v.01M11.5 16v-5.5M11.5 13c0-1.7 1-2.5 2.3-2.5 1.4 0 2.2.9 2.2 2.6V16"/></symbol>
+      <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2.5-6.5z"/></symbol>
+    </defs>
+  </svg>
+
+  <header class="nav" data-nav>
+    <div class="wrap nav-row">
+      <a href="#top" class="mark" aria-label="Fernando Uhart, back to top"><span class="mark-badge" aria-hidden="true">FU</span><span data-f="name">Fernando Uhart</span></a>
+      <nav class="nav-links" aria-label="Main">
+        <a href="#about" data-link>About</a>
+        <a href="#experience" data-link>Experience</a>
+        <a href="#skills" data-link>Skills</a>
+        <a href="#contact" data-link>Contact</a>
+      </nav>
+      <a class="btn btn-ink btn-sm" data-linkedin target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-in"/></svg>LinkedIn</a>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <!-- HERO -->
+    <section class="hero" id="top" aria-labelledby="hero-name">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <h1 id="hero-name" class="display"><span data-f="name" data-split>Fernando Uhart</span></h1>
+          <p class="hero-headline hero-in" style="--d:120ms" data-f="headline"></p>
+          <p class="hero-loc hero-in" style="--d:180ms" data-loc-row><svg class="ic"><use href="#i-pin"/></svg><span data-f="location"></span></p>
+          <div class="hero-actions hero-in" style="--d:240ms">
+            <a class="btn btn-ink" data-linkedin target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-in"/></svg>View LinkedIn profile<svg class="ic ic-sm ic-out"><use href="#i-out"/></svg></a>
+            <a class="btn btn-line" href="#contact">Get in touch<svg class="ic ic-sm ic-arrow"><use href="#i-arrow"/></svg></a>
+          </div>
+        </div>
+
+        <!-- Stageshow scene: a career timeline "product shot", driven by profile.js -->
+        <figure class="stage hero-in" style="--d:160ms" aria-label="Career timeline illustration" data-stage-hero>
+          <div class="window">
+            <div class="chrome"><i></i><i></i><i></i><span class="chrome-title">Career timeline</span></div>
+            <div class="window-body">
+              <div class="lane-head">
+                <div class="lane-who"><span class="avatar" aria-hidden="true">FU</span><span class="lane-name" data-f="name">Fernando Uhart</span></div>
+                <div class="axis" data-axis></div>
+              </div>
+              <div class="lanes" data-lanes></div>
+            </div>
+            <div class="tip" data-tip aria-hidden="true">
+              <p class="tip-years" data-tip-years></p>
+              <p class="tip-title" data-tip-title></p>
+              <p class="tip-co" data-tip-co></p>
+            </div>
+            <svg class="cursor" data-cursor viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8-6 1.6L10 19z"/></svg>
+          </div>
+          <div class="satellite" aria-hidden="true">
+            <span class="sat-dot"></span>
+            <div>
+              <p class="sat-k">Profile</p>
+              <p class="sat-v" data-f="headline-short"></p>
+            </div>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <!-- HIGHLIGHTS: numbers stated on the profile -->
+    <section class="highlights" aria-label="Highlights" data-highlights-wrap>
+      <dl class="wrap hl-grid" data-highlights></dl>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="section" id="about" aria-labelledby="about-title">
+      <div class="wrap two-col">
+        <h2 id="about-title" class="display h2 reveal">About</h2>
+        <div class="reveal"><p class="eyebrow">What I’m focused on</p><div class="about-body" data-about></div></div>
+      </div>
+    </section>
+
+    <!-- EXPERIENCE -->
+    <section class="section" id="experience" aria-labelledby="exp-title">
+      <div class="wrap two-col">
+        <div class="col-head reveal"><h2 id="exp-title" class="display h2">Experience</h2><p class="col-meta" data-exp-meta></p></div>
+        <div class="roles-wrap"><span class="rail" aria-hidden="true"><i data-rail-fill></i></span><ol class="roles" data-roles></ol></div>
+      </div>
+    </section>
+
+    <!-- SKILLS / EDUCATION / LANGUAGES -->
+    <section class="section" id="skills" aria-labelledby="skills-title">
+      <div class="wrap two-col">
+        <h2 id="skills-title" class="display h2 reveal">Skills &amp; background</h2>
+        <div class="facts">
+          <div class="fact reveal"><h3 class="fact-k">Skills</h3><ul class="chips" data-skills></ul><a class="more" data-skills-more hidden target="_blank" rel="noopener noreferrer">See all skills on LinkedIn<svg class="ic ic-sm ic-out"><use href="#i-out"/></svg></a></div>
+          <div class="fact reveal"><h3 class="fact-k">Education</h3><ul class="plain" data-education></ul><a class="more" data-edu-more hidden target="_blank" rel="noopener noreferrer">See all education on LinkedIn<svg class="ic ic-sm ic-out"><use href="#i-out"/></svg></a></div>
+          <div class="fact reveal"><h3 class="fact-k">Languages</h3><ul class="plain" data-languages></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="section contact" id="contact" aria-labelledby="contact-title">
+      <div class="wrap contact-grid">
+        <div>
+          <h2 id="contact-title" class="display h2 reveal">Get in touch</h2>
+          <p class="lede reveal">The best way to reach Fernando is a message on LinkedIn.</p>
+          <div class="contact-actions reveal">
+            <a class="btn btn-ink" data-linkedin target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-in"/></svg>Message on LinkedIn<svg class="ic ic-sm ic-out"><use href="#i-out"/></svg></a>
+            <a class="btn btn-line" data-email hidden><svg class="ic"><use href="#i-mail"/></svg><span data-email-text></span></a>
+          </div>
+        </div>
+
+        <!-- Stageshow scene: a message being written and sent -->
+        <figure class="stage reveal" aria-label="Illustration of a message being sent" data-stage-msg>
+          <div class="window window-msg">
+            <div class="chrome"><i></i><i></i><i></i><span class="chrome-title">New message</span></div>
+            <div class="msg-body">
+              <div class="msg-row"><span class="msg-k">To</span><span class="msg-to"><span class="avatar avatar-sm" aria-hidden="true">FU</span><span data-f="name">Fernando Uhart</span></span></div>
+              <div class="msg-row"><span class="msg-k">Subject</span><span class="msg-subject"><span data-typed></span><span class="caret" data-caret></span></span></div>
+              <div class="msg-lines"><i style="width:92%"></i><i style="width:84%"></i><i style="width:66%"></i></div>
+              <div class="msg-foot"><span class="send" data-send><svg class="ic"><use href="#i-send"/></svg><span>Send</span></span></div>
+            </div>
+            <div class="toast" data-toast><svg class="ic"><use href="#i-check"/></svg>Message sent</div>
+            <svg class="cursor" data-cursor2 viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8-6 1.6L10 19z"/></svg>
+          </div>
+        </figure>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-row">
+      <p>© <span data-year></span> <span data-f="name">Fernando Uhart</span></p>
+      <a data-linkedin target="_blank" rel="noopener noreferrer">LinkedIn<svg class="ic ic-sm ic-out"><use href="#i-out"/></svg></a>
+    </div>
+  </footer>
+
+  <script src="profile.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
