@@ -16,8 +16,9 @@
   $$("[data-f=name]").forEach((el) => (el.textContent = P.name || "Fernando Uhart"));
   $$("[data-linkedin]").forEach((a) => (a.href = P.linkedin));
   $$("[data-f=headline]").forEach((el) => (el.innerHTML = P.headline ? esc(P.headline) : todo("headline")));
-  $$("[data-f=location]").forEach((el) => (el.innerHTML = P.location ? esc(P.location) : todo("location")));
-  $$("[data-f=headline-short]").forEach((el) => (el.innerHTML = P.headline ? esc(P.headline.split(/[|·,]/)[0].trim()) : skel("160px")));
+  $$("[data-f=location]").forEach((el) => (el.textContent = P.location || ""));
+  if (!P.location) $("[data-loc-row]").hidden = true;
+  $$("[data-f=headline-short]").forEach((el) => (el.innerHTML = P.headline ? esc(P.headline.split(/[|·]/)[0].trim()) : skel("160px")));
   if (P.headline) document.title = `${P.name} · ${P.headline}`;
 
   // ---- About ----
@@ -36,6 +37,8 @@
           ${r.company ? `<p class="role-co">${esc(r.company)}</p>` : ""}
           ${r.location ? `<p class="role-meta">${esc(r.location)}</p>` : ""}
           ${r.summary ? `<p class="role-sum">${esc(r.summary)}</p>` : ""}
+          ${r.bullets && r.bullets.length ? `<ul class="role-bullets">${r.bullets.map((b) => `<li>${b.head ? `<strong>${esc(b.head)}.</strong> ` : ""}${esc(b.text)}</li>`).join("")}</ul>` : ""}
+          ${r.clients && r.clients.length ? `<p class="role-clients"><span>Clients</span>${r.clients.map((c) => `<em>${esc(c)}</em>`).join("")}</p>` : ""}
         </div>
       </li>`).join("")
     : [0, 1, 2].map((i) => `
@@ -47,6 +50,14 @@
   // ---- Skills / education / languages ----
   const skills = P.skills || [];
   $("[data-skills]").innerHTML = skills.length ? skills.map((s) => `<li>${esc(s)}</li>`).join("") : `<li class="todo">Add skills from LinkedIn</li>`;
+  if (P.skillsMore && skills.length) { const a = $("[data-skills-more]"); a.href = P.skillsMore; a.hidden = false; }
+  if (P.educationMore && (P.education || []).length) { const a = $("[data-edu-more]"); a.href = P.educationMore; a.hidden = false; }
+  // ---- Highlights ----
+  const hl = P.highlights || [];
+  if (hl.length) {
+    $("[data-highlights]").innerHTML = hl.map((h) => `
+      <div class="hl reveal"><dt class="hl-label">${esc(h.label)}</dt><dd class="hl-value">${esc(h.value)}${h.unit ? ` <span>${esc(h.unit)}</span>` : ""}</dd></div>`).join("");
+  } else $("[data-highlights-wrap]").hidden = true;
   const edu = P.education || [];
   $("[data-education]").innerHTML = edu.length
     ? edu.map((e) => `<li><p class="p-main">${esc(e.school || "")}</p><p class="p-sub">${esc([e.degree, [e.start, e.end].filter(Boolean).join("–")].filter(Boolean).join(" · "))}</p></li>`).join("")
@@ -68,13 +79,27 @@
   const lanesEl = $("[data-lanes]");
   const axisEl = $("[data-axis]");
   let spans; // [{ start, end, title, company, years }]
-  const toYear = (v) => (String(v).toLowerCase().startsWith("present") ? thisYear : parseInt(v, 10));
+  const toYear = (v) => {
+    if (String(v).toLowerCase().startsWith("present")) return thisYear;
+    const m = String(v).match(/\d{4}/);
+    return m ? parseInt(m[0], 10) : NaN;
+  };
   const dated = roles.filter((r) => !Number.isNaN(toYear(r.start)));
   if (dated.length) {
-    spans = dated.slice(0, 6).map((r) => ({
-      start: toYear(r.start), end: r.end ? toYear(r.end) : toYear(r.start) + 1,
-      title: r.title || "", company: r.company || "", years: `${r.start}${r.end ? "–" + r.end : ""}`,
-      now: String(r.end || "").toLowerCase().startsWith("present"),
+    // One row per lane (company and country); roles in a lane merge into one span
+    const lanes = new Map();
+    dated.forEach((r) => {
+      const key = r.lane || r.company || r.title;
+      const s = toYear(r.start), e = r.end ? toYear(r.end) : toYear(r.start) + 1;
+      const now = String(r.end || "").toLowerCase().startsWith("present");
+      const cur = lanes.get(key);
+      if (!cur) lanes.set(key, { start: s, end: e, title: r.title || "", company: key, now, roles: 1 });
+      else { cur.start = Math.min(cur.start, s); cur.end = Math.max(cur.end, e); cur.now = cur.now || now; cur.roles++; }
+    });
+    spans = [...lanes.values()].slice(0, 8).map((l) => ({
+      ...l,
+      years: `${l.start}–${l.now ? "Present" : l.end}`,
+      title: l.roles > 1 ? `${l.title} (+${l.roles - 1} more role${l.roles > 2 ? "s" : ""})` : l.title,
     })).reverse(); // oldest at the top
     const min = Math.min(...spans.map((s) => s.start));
     const max = Math.max(...spans.map((s) => s.end));
@@ -83,7 +108,7 @@
     const ticks = [min, Math.round(min + range / 3), Math.round(min + (2 * range) / 3), max];
     axisEl.innerHTML = ticks.map((t) => `<span style="left:${Math.min(96, Math.max(4, pct(t)))}%">${t}</span>`).join("");
     lanesEl.innerHTML = spans.map((s) => `
-      <div class="lane"><span class="lane-label">${esc(s.company || s.title)}</span>
+      <div class="lane"><span class="lane-label">${esc(s.company)}</span>
         <span class="lane-track"><span class="bar${s.now ? " is-now" : ""}" style="left:${pct(s.start)}%;width:${Math.max(3, pct(s.end) - pct(s.start))}%"></span></span></div>`).join("");
   } else {
     // No data yet: neutral placeholder bars, like a product shot before content loads

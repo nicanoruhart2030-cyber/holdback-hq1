@@ -51,7 +51,7 @@
         <div class="hero-copy">
           <h1 id="hero-name" class="display hero-in" style="--d:0ms"><span data-f="name">Fernando Uhart</span></h1>
           <p class="hero-headline hero-in" style="--d:120ms" data-f="headline"></p>
-          <p class="hero-loc hero-in" style="--d:180ms"><svg class="ic"><use href="#i-pin"/></svg><span data-f="location"></span></p>
+          <p class="hero-loc hero-in" style="--d:180ms" data-loc-row><svg class="ic"><use href="#i-pin"/></svg><span data-f="location"></span></p>
           <div class="hero-actions hero-in" style="--d:240ms">
             <a class="btn btn-ink" data-linkedin target="_blank" rel="noopener noreferrer"><svg class="ic"><use href="#i-in"/></svg>View LinkedIn profile<svg class="ic ic-sm"><use href="#i-out"/></svg></a>
             <a class="btn btn-line" href="#contact">Get in touch<svg class="ic ic-sm"><use href="#i-arrow"/></svg></a>
@@ -87,6 +87,11 @@
       </div>
     </section>
 
+    <!-- HIGHLIGHTS: numbers stated on the profile -->
+    <section class="highlights" aria-label="Highlights" data-highlights-wrap>
+      <dl class="wrap hl-grid" data-highlights></dl>
+    </section>
+
     <!-- ABOUT -->
     <section class="section" id="about" aria-labelledby="about-title">
       <div class="wrap two-col">
@@ -108,8 +113,8 @@
       <div class="wrap two-col">
         <h2 id="skills-title" class="display h2 reveal">Skills &amp; background</h2>
         <div class="facts">
-          <div class="fact reveal"><h3 class="fact-k">Skills</h3><ul class="chips" data-skills></ul></div>
-          <div class="fact reveal"><h3 class="fact-k">Education</h3><ul class="plain" data-education></ul></div>
+          <div class="fact reveal"><h3 class="fact-k">Skills</h3><ul class="chips" data-skills></ul><a class="more" data-skills-more hidden target="_blank" rel="noopener noreferrer">See all skills on LinkedIn<svg class="ic ic-sm"><use href="#i-out"/></svg></a></div>
+          <div class="fact reveal"><h3 class="fact-k">Education</h3><ul class="plain" data-education></ul><a class="more" data-edu-more hidden target="_blank" rel="noopener noreferrer">See all education on LinkedIn<svg class="ic ic-sm"><use href="#i-out"/></svg></a></div>
           <div class="fact reveal"><h3 class="fact-k">Languages</h3><ul class="plain" data-languages></ul></div>
         </div>
       </div>
